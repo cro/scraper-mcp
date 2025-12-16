@@ -1,8 +1,8 @@
 """MCP scraping tools and business logic.
 
 This module provides the core scraping functionality exposed as MCP tools:
-- scrape_url: Raw HTML content retrieval
-- scrape_url_markdown: HTML to Markdown conversion
+- scrape_url: HTML to Markdown conversion (default)
+- scrape_url_html: Raw HTML content retrieval
 - scrape_url_text: Plain text extraction
 - scrape_extract_links: Link discovery and extraction
 
@@ -23,7 +23,7 @@ from scraper_mcp.tools.router import (
     register_scraping_tools,
     scrape_extract_links,
     scrape_url,
-    scrape_url_markdown,
+    scrape_url_html,
     scrape_url_text,
 )
 from scraper_mcp.tools.service import (
@@ -37,7 +37,7 @@ from scraper_mcp.tools.service import (
 __all__ = [
     # MCP tool functions
     "scrape_url",
-    "scrape_url_markdown",
+    "scrape_url_html",
     "scrape_url_text",
     "scrape_extract_links",
     # Registration functions

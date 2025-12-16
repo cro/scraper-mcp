@@ -495,40 +495,58 @@
             <div class="card">
                 <h2>API Playground</h2>
                 <form id="playground-form">
-                    <div class="form-group">
+                    <div class="form-group" id="url-input-group">
                         <label class="form-label" for="test-url">URL</label>
                         <input type="text" id="test-url" class="form-input" placeholder="https://example.com" required>
                         <small class="form-help">Enter a URL to scrape</small>
                     </div>
 
+                    <div class="form-group" id="query-input-group" style="display: none;">
+                        <label class="form-label" for="test-query">Query</label>
+                        <textarea id="test-query" class="form-input" rows="3" placeholder="What is the current state of AI in 2025?"></textarea>
+                        <small class="form-help">Enter your question or topic to search</small>
+                    </div>
+
                     <div class="form-grid">
                         <div class="form-group">
                             <label class="form-label" for="test-tool">Tool</label>
-                            <select id="test-tool" class="form-input">
-                                <option value="scrape_url">scrape_url (HTML)</option>
-                                <option value="scrape_url_markdown" selected>scrape_url_markdown</option>
-                                <option value="scrape_url_text">scrape_url_text</option>
-                                <option value="scrape_extract_links">scrape_extract_links</option>
+                            <select id="test-tool" class="form-input" onchange="toggleToolInputs()">
+                                <optgroup label="Web Scraping">
+                                    <option value="scrape_url" selected>scrape_url (Markdown)</option>
+                                    <option value="scrape_url_html">scrape_url_html (Raw HTML)</option>
+                                    <option value="scrape_url_text">scrape_url_text (Plain Text)</option>
+                                    <option value="scrape_extract_links">scrape_extract_links (Links)</option>
+                                </optgroup>
+                                <optgroup label="Perplexity AI">
+                                    <option value="perplexity">perplexity (Web Search)</option>
+                                    <option value="perplexity_reason">perplexity_reason (Reasoning)</option>
+                                </optgroup>
                             </select>
-                            <small class="form-help">Select scraping tool</small>
+                            <small class="form-help">Select tool to test</small>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group scraper-options">
                             <label class="form-label" for="test-timeout">Timeout (seconds)</label>
                             <input type="number" id="test-timeout" class="form-input" min="1" value="30">
                             <small class="form-help">Request timeout</small>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group scraper-options">
                             <label class="form-label" for="test-retries">Max Retries</label>
                             <input type="number" id="test-retries" class="form-input" min="0" value="3">
                             <small class="form-help">Max retry attempts</small>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group scraper-options">
                             <label class="form-label" for="test-selector">CSS Selector (optional)</label>
                             <input type="text" id="test-selector" class="form-input" placeholder=".article-content">
                             <small class="form-help">Filter HTML elements</small>
+                        </div>
+
+                        <div class="form-group perplexity-options" style="display: none;">
+                            <label class="form-label" for="test-temperature">Temperature</label>
+                            <input type="number" id="test-temperature" class="form-input" min="0" max="2" step="0.1" value="0.3">
+                            <small class="form-help">Creativity (0-2, lower = focused)</small>
                         </div>
                     </div>
 
@@ -812,6 +830,29 @@
             document.getElementById('no_proxy').disabled = !enabled;
         }
 
+        function toggleToolInputs() {
+            const tool = document.getElementById('test-tool').value;
+            const isPerplexity = tool.startsWith('perplexity');
+
+            // Toggle URL vs Query inputs
+            document.getElementById('url-input-group').style.display = isPerplexity ? 'none' : 'block';
+            document.getElementById('query-input-group').style.display = isPerplexity ? 'block' : 'none';
+
+            // Toggle scraper options (timeout, retries, selector)
+            document.querySelectorAll('.scraper-options').forEach(el => {
+                el.style.display = isPerplexity ? 'none' : 'block';
+            });
+
+            // Toggle perplexity options (temperature)
+            document.querySelectorAll('.perplexity-options').forEach(el => {
+                el.style.display = isPerplexity ? 'block' : 'none';
+            });
+
+            // Update required fields
+            document.getElementById('test-url').required = !isPerplexity;
+            document.getElementById('test-query').required = isPerplexity;
+        }
+
         async function loadConfig() {
             try {
                 const response = await fetch('/api/config');
@@ -881,11 +922,8 @@
         async function runPlaygroundTool(event) {
             event.preventDefault();
 
-            const url = document.getElementById('test-url').value;
             const tool = document.getElementById('test-tool').value;
-            const timeout = parseInt(document.getElementById('test-timeout').value);
-            const maxRetries = parseInt(document.getElementById('test-retries').value);
-            const cssSelector = document.getElementById('test-selector').value;
+            const isPerplexity = tool.startsWith('perplexity');
 
             const responseCard = document.getElementById('playground-response');
             const responseStatus = document.getElementById('response-status');
@@ -894,26 +932,74 @@
             // Show loading state
             responseCard.style.display = 'block';
             responseStatus.textContent = 'Loading...';
+            responseStatus.style.color = '#737373';
             responseJson.querySelector('code').textContent = '';
 
             try {
-                const payload = {
-                    jsonrpc: "2.0",
-                    id: 1,
-                    method: "tools/call",
-                    params: {
-                        name: tool,
-                        arguments: {
-                            urls: [url],
-                            timeout: timeout,
-                            max_retries: maxRetries
-                        }
-                    }
-                };
+                let payload;
 
-                // Add optional css_selector
-                if (cssSelector) {
-                    payload.params.arguments.css_selector = cssSelector;
+                if (isPerplexity) {
+                    // Perplexity tools
+                    const query = document.getElementById('test-query').value;
+                    const temperature = parseFloat(document.getElementById('test-temperature').value);
+
+                    if (!query) {
+                        throw new Error('Please enter a query');
+                    }
+
+                    if (tool === 'perplexity') {
+                        payload = {
+                            jsonrpc: "2.0",
+                            id: 1,
+                            method: "tools/call",
+                            params: {
+                                name: tool,
+                                arguments: {
+                                    messages: [{ role: "user", content: query }],
+                                    temperature: temperature
+                                }
+                            }
+                        };
+                    } else {
+                        // perplexity_reason
+                        payload = {
+                            jsonrpc: "2.0",
+                            id: 1,
+                            method: "tools/call",
+                            params: {
+                                name: tool,
+                                arguments: {
+                                    query: query,
+                                    temperature: temperature
+                                }
+                            }
+                        };
+                    }
+                } else {
+                    // Scraper tools
+                    const url = document.getElementById('test-url').value;
+                    const timeout = parseInt(document.getElementById('test-timeout').value);
+                    const maxRetries = parseInt(document.getElementById('test-retries').value);
+                    const cssSelector = document.getElementById('test-selector').value;
+
+                    payload = {
+                        jsonrpc: "2.0",
+                        id: 1,
+                        method: "tools/call",
+                        params: {
+                            name: tool,
+                            arguments: {
+                                urls: [url],
+                                timeout: timeout,
+                                max_retries: maxRetries
+                            }
+                        }
+                    };
+
+                    // Add optional css_selector
+                    if (cssSelector) {
+                        payload.params.arguments.css_selector = cssSelector;
+                    }
                 }
 
                 const startTime = Date.now();

@@ -234,8 +234,8 @@ class TestPerplexityTools:
     """Tests for Perplexity MCP tools."""
 
     @pytest.mark.asyncio
-    async def test_perplexity_ask_tool(self) -> None:
-        """Test perplexity_ask tool function."""
+    async def test_perplexity_tool(self) -> None:
+        """Test perplexity tool function."""
         mock_response = PerplexityResponse(
             content="Test response",
             model="sonar",
@@ -251,9 +251,9 @@ class TestPerplexityTools:
             "scraper_mcp.tools.router.get_perplexity_service",
             return_value=mock_service,
         ):
-            from scraper_mcp.tools.router import perplexity_ask
+            from scraper_mcp.tools.router import perplexity
 
-            result = await perplexity_ask(
+            result = await perplexity(
                 messages=[{"role": "user", "content": "What is AI?"}],
                 model="sonar-pro",
                 temperature=0.5,

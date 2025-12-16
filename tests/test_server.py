@@ -11,17 +11,17 @@ from scraper_mcp.providers import ScrapeResult
 from scraper_mcp.tools.router import (
     scrape_extract_links,
     scrape_url,
-    scrape_url_markdown,
+    scrape_url_html,
     scrape_url_text,
 )
 
 
 class TestScrapeUrlTool:
-    """Tests for scrape_url tool."""
+    """Tests for scrape_url tool (returns markdown by default)."""
 
     @pytest.mark.asyncio
-    async def test_scrape_url_success(self, sample_html: str) -> None:
-        """Test successful URL scraping."""
+    async def test_scrape_url_returns_markdown(self, sample_html: str) -> None:
+        """Test that scrape_url returns markdown content."""
         mock_result = ScrapeResult(
             url="https://example.com",
             content=sample_html,
@@ -36,14 +36,15 @@ class TestScrapeUrlTool:
         with patch("scraper_mcp.tools.service.default_provider", mock_provider):
             result = await scrape_url(["https://example.com"])
 
-            # Should return BatchScrapeResponse
+            # Should return BatchScrapeResponse with markdown content
             assert result.total == 1
             assert result.successful == 1
             assert result.results[0].url == "https://example.com"
-            assert result.results[0].data.content == sample_html
+            # Content should be markdown, not raw HTML
+            assert "Main Heading" in result.results[0].data.content
+            assert "<html>" not in result.results[0].data.content
+            assert "<body>" not in result.results[0].data.content
             assert result.results[0].data.status_code == 200
-            assert result.results[0].data.content_type == "text/html; charset=utf-8"
-            assert "elapsed_ms" in result.results[0].data.metadata
 
     @pytest.mark.asyncio
     async def test_scrape_url_with_timeout(self, sample_html: str) -> None:
@@ -96,45 +97,44 @@ class TestScrapeUrlTool:
             assert result.results[0].data.metadata["retries"] == 1
 
 
-class TestScrapeUrlMarkdownTool:
-    """Tests for scrape_url_markdown tool."""
+class TestScrapeUrlHtmlTool:
+    """Tests for scrape_url_html tool (returns raw HTML)."""
 
     @pytest.mark.asyncio
-    async def test_scrape_url_markdown_conversion(self, sample_html: str) -> None:
-        """Test HTML to markdown conversion."""
+    async def test_scrape_url_html_returns_raw_html(self, sample_html: str) -> None:
+        """Test that scrape_url_html returns raw HTML content."""
         mock_result = ScrapeResult(
             url="https://example.com",
             content=sample_html,
             status_code=200,
-            content_type="text/html",
-            metadata={},
+            content_type="text/html; charset=utf-8",
+            metadata={"headers": {}, "encoding": "utf-8", "elapsed_ms": 123.45},
         )
 
         mock_provider = Mock()
         mock_provider.scrape = AsyncMock(return_value=mock_result)
 
         with patch("scraper_mcp.tools.service.default_provider", mock_provider):
-            result = await scrape_url_markdown(["https://example.com"])
+            result = await scrape_url_html(["https://example.com"])
 
-            # Should return BatchScrapeResponse
+            # Should return BatchScrapeResponse with raw HTML
             assert result.total == 1
             assert result.successful == 1
-
-            # Content should be markdown, not HTML
-            assert "Main Heading" in result.results[0].data.content
-            assert "<html>" not in result.results[0].data.content
-            assert "<body>" not in result.results[0].data.content
-
-            # Should have page metadata
-            assert "page_metadata" in result.results[0].data.metadata
-            assert result.results[0].data.metadata["page_metadata"]["title"] == "Test Page Title"
+            assert result.results[0].url == "https://example.com"
+            # Content should be raw HTML
+            assert result.results[0].data.content == sample_html
+            assert result.results[0].data.status_code == 200
+            assert result.results[0].data.content_type == "text/html; charset=utf-8"
+            assert "elapsed_ms" in result.results[0].data.metadata
 
     @pytest.mark.asyncio
-    async def test_scrape_url_markdown_strip_tags(self, sample_html: str) -> None:
-        """Test markdown conversion with tag stripping."""
+    async def test_scrape_url_html_with_css_selector(
+        self, html_with_structured_content: str
+    ) -> None:
+        """Test HTML scraping with CSS selector filtering."""
         mock_result = ScrapeResult(
             url="https://example.com",
-            content=sample_html,
+            content=html_with_structured_content,
             status_code=200,
             content_type="text/html",
             metadata={},
@@ -144,48 +144,15 @@ class TestScrapeUrlMarkdownTool:
         mock_provider.scrape = AsyncMock(return_value=mock_result)
 
         with patch("scraper_mcp.tools.service.default_provider", mock_provider):
-            result = await scrape_url_markdown(
-                ["https://example.com"], strip_tags=["script", "style"]
+            result = await scrape_url_html(
+                ["https://example.com"], css_selector="article.main-content"
             )
 
-            # Should return BatchScrapeResponse
             assert result.total == 1
             assert result.successful == 1
-
-            # Scripts and styles should be stripped
-            assert "console.log" not in result.results[0].data.content
-            assert ".test { color: red; }" not in result.results[0].data.content
-            # But content should remain
-            assert "Main Heading" in result.results[0].data.content
-
-    @pytest.mark.asyncio
-    async def test_scrape_url_markdown_metadata_extraction(
-        self, html_with_metadata: str
-    ) -> None:
-        """Test that page metadata is extracted."""
-        mock_result = ScrapeResult(
-            url="https://example.com",
-            content=html_with_metadata,
-            status_code=200,
-            content_type="text/html",
-            metadata={},
-        )
-
-        mock_provider = Mock()
-        mock_provider.scrape = AsyncMock(return_value=mock_result)
-
-        with patch("scraper_mcp.tools.service.default_provider", mock_provider):
-            result = await scrape_url_markdown(["https://example.com"])
-
-            # Should return BatchScrapeResponse
-            assert result.total == 1
-            assert result.successful == 1
-
-            # Should extract metadata
-            page_metadata = result.results[0].data.metadata["page_metadata"]
-            assert page_metadata["title"] == "Metadata Test Page"
-            assert page_metadata["description"] == "Test description"
-            assert page_metadata["og:title"] == "OG Title"
+            # Content should only include the article
+            assert "Article Title" in result.results[0].data.content
+            assert "<nav" not in result.results[0].data.content
 
 
 class TestScrapeUrlTextTool:
@@ -467,7 +434,7 @@ class TestBatchScrapeUrl:
 
 
 class TestBatchScrapeUrlMarkdown:
-    """Tests for batch scrape_url_markdown operations."""
+    """Tests for batch scrape_url operations."""
 
     @pytest.mark.asyncio
     async def test_batch_markdown_multiple_urls(self, sample_html: str) -> None:
@@ -489,7 +456,7 @@ class TestBatchScrapeUrlMarkdown:
         mock_provider.scrape = AsyncMock(return_value=mock_result)
 
         with patch("scraper_mcp.tools.service.default_provider", mock_provider):
-            result = await scrape_url_markdown(urls)
+            result = await scrape_url(urls)
 
             # Should return BatchScrapeResponse
             assert result.total == 2
@@ -587,10 +554,10 @@ class TestCssSelectorFiltering:
     """Tests for CSS selector filtering across all tools."""
 
     @pytest.mark.asyncio
-    async def test_scrape_url_with_css_selector(
+    async def test_scrape_url_html_with_css_selector(
         self, html_with_structured_content: str
     ) -> None:
-        """Test scrape_url with CSS selector filtering."""
+        """Test scrape_url_html with CSS selector filtering."""
         mock_result = ScrapeResult(
             url="https://example.com",
             content=html_with_structured_content,
@@ -603,7 +570,7 @@ class TestCssSelectorFiltering:
         mock_provider.scrape = AsyncMock(return_value=mock_result)
 
         with patch("scraper_mcp.tools.service.default_provider", mock_provider):
-            result = await scrape_url(["https://example.com"], css_selector="meta")
+            result = await scrape_url_html(["https://example.com"], css_selector="meta")
 
             # Should return BatchScrapeResponse
             assert result.total == 1
@@ -618,7 +585,7 @@ class TestCssSelectorFiltering:
             assert result.results[0].data.metadata["elements_matched"] == 3
 
     @pytest.mark.asyncio
-    async def test_scrape_url_markdown_with_css_selector(
+    async def test_scrape_url_with_css_selector(
         self, html_with_structured_content: str
     ) -> None:
         """Test markdown conversion with CSS selector."""
@@ -634,7 +601,7 @@ class TestCssSelectorFiltering:
         mock_provider.scrape = AsyncMock(return_value=mock_result)
 
         with patch("scraper_mcp.tools.service.default_provider", mock_provider):
-            result = await scrape_url_markdown(
+            result = await scrape_url(
                 ["https://example.com"], css_selector=".main-content"
             )
 
@@ -727,13 +694,13 @@ class TestCssSelectorFiltering:
         mock_provider.scrape = AsyncMock(return_value=mock_result)
 
         with patch("scraper_mcp.tools.service.default_provider", mock_provider):
-            result = await scrape_url(["https://example.com"], css_selector="img, video")
+            result = await scrape_url_html(["https://example.com"], css_selector="img, video")
 
             # Should return BatchScrapeResponse
             assert result.total == 1
             assert result.successful == 1
 
-            # Should contain both img and video tags
+            # Should contain both img and video tags (raw HTML)
             assert "<img" in result.results[0].data.content
             assert "<video" in result.results[0].data.content
             assert result.results[0].data.metadata["elements_matched"] == 2
@@ -785,7 +752,7 @@ class TestCssSelectorFiltering:
 
         with patch("scraper_mcp.tools.service.default_provider", mock_provider):
             # First filter to article, then strip img tags
-            result = await scrape_url_markdown(
+            result = await scrape_url(
                 ["https://example.com"],
                 css_selector="article",
                 strip_tags=["img", "video"],

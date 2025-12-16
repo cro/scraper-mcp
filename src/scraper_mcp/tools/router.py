@@ -22,29 +22,6 @@ async def scrape_url(
     urls: list[str],
     timeout: int = 30,
     max_retries: int = 3,
-    css_selector: str | None = None,
-    include_headers: bool = False,
-) -> BatchScrapeResponse:
-    """Scrape raw HTML content from one or more URLs.
-
-    Args:
-        urls: List of URLs to scrape (must be http:// or https://)
-        timeout: Request timeout in seconds (default: 30)
-        max_retries: Maximum number of retry attempts on failure (default: 3)
-        css_selector: Optional CSS selector to filter HTML elements
-                     (e.g., "meta", "img, video", ".article-content")
-        include_headers: Include HTTP response headers in metadata (default: False)
-
-    Returns:
-        BatchScrapeResponse with results for all URLs
-    """
-    return await batch_scrape_urls(urls, timeout, max_retries, DEFAULT_CONCURRENCY, css_selector, include_headers)
-
-
-async def scrape_url_markdown(
-    urls: list[str],
-    timeout: int = 30,
-    max_retries: int = 3,
     strip_tags: list[str] | None = None,
     css_selector: str | None = None,
     include_headers: bool = False,
@@ -65,6 +42,31 @@ async def scrape_url_markdown(
     """
     return await batch_scrape_urls_markdown(
         urls, timeout, max_retries, strip_tags, DEFAULT_CONCURRENCY, css_selector, include_headers
+    )
+
+
+async def scrape_url_html(
+    urls: list[str],
+    timeout: int = 30,
+    max_retries: int = 3,
+    css_selector: str | None = None,
+    include_headers: bool = False,
+) -> BatchScrapeResponse:
+    """Scrape raw HTML content from one or more URLs.
+
+    Args:
+        urls: List of URLs to scrape (must be http:// or https://)
+        timeout: Request timeout in seconds (default: 30)
+        max_retries: Maximum number of retry attempts on failure (default: 3)
+        css_selector: Optional CSS selector to filter HTML elements
+                     (e.g., "meta", "img, video", ".article-content")
+        include_headers: Include HTTP response headers in metadata (default: False)
+
+    Returns:
+        BatchScrapeResponse with raw HTML results for all URLs
+    """
+    return await batch_scrape_urls(
+        urls, timeout, max_retries, DEFAULT_CONCURRENCY, css_selector, include_headers
     )
 
 
@@ -190,8 +192,8 @@ def register_scraping_tools(mcp: FastMCP) -> None:
     """
     # Register core scraping tools
     # Each tool is exposed via MCP and documented in the API schema
-    mcp.tool()(scrape_url)
-    mcp.tool()(scrape_url_markdown)
+    mcp.tool()(scrape_url)  # Returns markdown by default
+    mcp.tool()(scrape_url_html)  # Returns raw HTML
     mcp.tool()(scrape_url_text)
     mcp.tool()(scrape_extract_links)
 
@@ -222,13 +224,13 @@ def register_cache_tools(mcp: FastMCP) -> None:
 # =============================================================================
 
 
-async def perplexity_ask(
+async def perplexity(
     messages: list[dict[str, str]],
     model: str = "sonar",
     temperature: float | None = None,
     max_tokens: int | None = None,
 ) -> PerplexityResponse:
-    """Engages in a conversation using the Perplexity to search the internet and answer questions.
+    """Engages in a conversation using Perplexity to search the internet and answer questions.
 
     Accepts an array of messages (each with a role and content) and returns a chat
     completion response from the Perplexity model.
@@ -292,5 +294,5 @@ def register_perplexity_tools(mcp: FastMCP) -> None:
         Perplexity tools require a valid API key from https://perplexity.ai
         Set PERPLEXITY_API_KEY environment variable to enable these tools.
     """
-    mcp.tool()(perplexity_ask)
+    mcp.tool()(perplexity)
     mcp.tool()(perplexity_reason)
