@@ -11,6 +11,7 @@ from scraper_mcp.admin.service import (
 )
 from scraper_mcp.cache_manager import get_cache_manager
 from scraper_mcp.metrics import get_request_by_id
+from scraper_mcp.providers.base import ScrapeResult
 
 
 async def health_check(request: Request) -> JSONResponse:
@@ -137,14 +138,25 @@ async def api_request_details(request: Request) -> JSONResponse:
         response["cache_key"] = metrics.cache_key
         if metrics.cache_key:
             cache = get_cache_manager()
-            cached_content = cache.get(metrics.cache_key)
-            if cached_content:
+            cached_data = cache.get(metrics.cache_key)
+            if cached_data:
+                # Extract content from ScrapeResult if needed
+                if isinstance(cached_data, ScrapeResult):
+                    content = cached_data.content
+                    response["scrape_result"] = {
+                        "url": cached_data.url,
+                        "status_code": cached_data.status_code,
+                        "content_type": cached_data.content_type,
+                    }
+                else:
+                    content = cached_data
+
                 # Return content preview (first 5000 chars)
-                content_preview = cached_content
-                if isinstance(cached_content, str) and len(cached_content) > 5000:
-                    content_preview = cached_content[:5000]
+                content_preview = content
+                if isinstance(content, str) and len(content) > 5000:
+                    content_preview = content[:5000]
                     response["content_truncated"] = True
-                    response["full_content_length"] = len(cached_content)
+                    response["full_content_length"] = len(content)
                 response["cached_content"] = content_preview
             else:
                 response["cached_content"] = None
