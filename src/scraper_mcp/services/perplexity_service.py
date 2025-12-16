@@ -7,6 +7,7 @@ import os
 import time
 from typing import Any
 
+from scraper_mcp.metrics import record_request
 from scraper_mcp.models.perplexity import PerplexityResponse
 
 # Perplexity SDK is optional - only import if available
@@ -77,6 +78,14 @@ class PerplexityService:
             PerplexityResponse with content, citations, and usage stats
         """
         if not self._client:
+            record_request(
+                url=f"perplexity://{model or self.default_model}",
+                success=False,
+                status_code=503,
+                elapsed_ms=0,
+                attempts=1,
+                error="Perplexity service not available",
+            )
             return self._error_response(
                 "Perplexity service not available", model or self.default_model
             )
@@ -123,6 +132,15 @@ class PerplexityService:
                     "total_tokens": completion.usage.total_tokens or 0,
                 }
 
+            # Record successful request in metrics
+            record_request(
+                url=f"perplexity://{model}",
+                success=True,
+                status_code=200,
+                elapsed_ms=elapsed_ms,
+                attempts=1,
+            )
+
             return PerplexityResponse(
                 content=content or "",
                 model=model,
@@ -135,16 +153,52 @@ class PerplexityService:
             )
 
         except RateLimitError as e:
+            elapsed_ms = int((time.time() - start_time) * 1000)
+            record_request(
+                url=f"perplexity://{model}",
+                success=False,
+                status_code=429,
+                elapsed_ms=elapsed_ms,
+                attempts=1,
+                error=f"Rate limit exceeded: {e}",
+            )
             return self._error_response(
                 f"Rate limit exceeded: {e}",
                 model,
                 rate_limited=True,
             )
         except BadRequestError as e:
+            elapsed_ms = int((time.time() - start_time) * 1000)
+            record_request(
+                url=f"perplexity://{model}",
+                success=False,
+                status_code=400,
+                elapsed_ms=elapsed_ms,
+                attempts=1,
+                error=f"Bad request: {e}",
+            )
             return self._error_response(f"Bad request: {e}", model)
         except APIStatusError as e:
+            elapsed_ms = int((time.time() - start_time) * 1000)
+            record_request(
+                url=f"perplexity://{model}",
+                success=False,
+                status_code=500,
+                elapsed_ms=elapsed_ms,
+                attempts=1,
+                error=f"API error: {e}",
+            )
             return self._error_response(f"API error: {e}", model)
         except Exception as e:
+            elapsed_ms = int((time.time() - start_time) * 1000)
+            record_request(
+                url=f"perplexity://{model}",
+                success=False,
+                status_code=500,
+                elapsed_ms=elapsed_ms,
+                attempts=1,
+                error=f"Unexpected error: {type(e).__name__}: {e}",
+            )
             return self._error_response(f"Unexpected error: {type(e).__name__}: {e}", model)
 
     async def reason(
