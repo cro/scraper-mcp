@@ -46,6 +46,12 @@ Try it out in Claude Code:
 - **Targeted scraping**: Combine CSS selectors with strip_tags for precision filtering
 - **Token efficiency**: Reduce context window usage by 70-90% compared to raw HTML
 
+### Perplexity AI Integration
+- **Web search**: Query the web using Perplexity's AI-powered search (`perplexity` tool)
+- **Reasoning mode**: Complex analysis with step-by-step reasoning (`perplexity_reason` tool)
+- **Citations included**: All responses include source citations for verification
+- **Token tracking**: Monitor prompt/completion token usage in dashboard
+
 ### Scraping Tools & Infrastructure
 - **Multiple scraping modes**: Raw HTML, markdown conversion, plain text extraction, and link extraction
 - **Batch operations**: Process multiple URLs concurrently with automatic retry logic
@@ -73,17 +79,19 @@ Track server health, request statistics, retry metrics, and cache performance at
 - **Request Statistics**: Total requests, success rate, and failure count
 - **Retry Analytics**: Total retries and average per request
 - **Cache Metrics**: Entry count, size, hit rate with one-click cache clearing
-- **Recent Requests**: Last 10 requests with timestamps, status codes, and response times
+- **Recent Requests**: Last 100 requests with timestamps, status codes, and response times
 - **Recent Errors**: Last 10 failures with detailed error messages and attempt counts
-- Auto-refreshes every 9 seconds for real-time monitoring
+- **Request Details Modal**: Click any request to view full details including cached content, Perplexity responses, citations, and token usage
+- **AI Badge**: Perplexity requests are marked with an "AI" badge for easy identification
+- Auto-refreshes every 10 seconds for real-time monitoring
 
 ### Interactive API Playground
-Test all scraping tools without writing code:
+Test all scraping and AI tools without writing code:
 
 ![Playground](docs/2-playground.png)
 
-- Test all four tools: `scrape_url`, `scrape_url_markdown`, `scrape_url_text`, `scrape_extract_links`
-- Configure parameters: URL, timeout, max retries, CSS selectors
+- Test all six tools: `scrape_url`, `scrape_url_html`, `scrape_url_text`, `scrape_extract_links`, `perplexity`, `perplexity_reason`
+- Configure parameters: URL/query, timeout, max retries, CSS selectors, temperature
 - View formatted JSON responses with syntax highlighting
 - One-click copy to clipboard
 - See execution time for performance testing
@@ -350,6 +358,33 @@ Scrape a URL and extract all links.
 - `url`: The URL that was scraped
 - `links`: Array of link objects with `url`, `text`, and `title`
 - `count`: Total number of links found
+
+### 5. `perplexity`
+Search the web using Perplexity AI. Requires `PERPLEXITY_API_KEY` environment variable.
+
+**Parameters:**
+- `messages` (array, required): Array of conversation messages with `role` (system/user/assistant) and `content`
+- `model` (string, optional): Model to use - "sonar" for general queries, "sonar-pro" for complex analysis (default: "sonar")
+- `temperature` (number, optional): Response creativity 0-2, lower = more focused (default: 0.3)
+- `max_tokens` (integer, optional): Maximum response length in tokens (default: 4000)
+
+**Returns:**
+- `content`: AI-generated response with inline citation markers
+- `model`: Model used for the response
+- `citations`: Array of source URLs referenced in the response
+- `usage`: Token usage statistics (prompt_tokens, completion_tokens, total_tokens)
+- `metadata`: Request timing and ID information
+
+### 6. `perplexity_reason`
+Perform complex reasoning tasks using Perplexity's reasoning model. Requires `PERPLEXITY_API_KEY` environment variable.
+
+**Parameters:**
+- `query` (string, required): The query or problem to reason about
+- `temperature` (number, optional): Response creativity 0-2, lower = more focused (default: 0.3)
+- `max_tokens` (integer, optional): Maximum response length in tokens (default: 4000)
+
+**Returns:**
+- Same as `perplexity` tool, optimized for analytical and multi-step reasoning tasks
 
 ## Local Development
 
@@ -619,6 +654,9 @@ When running with Docker, you can configure the server using environment variabl
 - `ENABLE_CACHE_TOOLS`: Enable cache management tools (`true`, `1`, or `yes` to enable, default: `false`)
   - When enabled, exposes `cache_stats`, `cache_clear_expired`, and `cache_clear_all` tools
   - Disabled by default for security and simplicity
+- `PERPLEXITY_API_KEY`: API key for Perplexity AI tools (optional)
+  - When set, enables `perplexity` and `perplexity_reason` tools
+  - Get your API key from [Perplexity AI](https://www.perplexity.ai/)
 
 ## Proxy Configuration
 
@@ -750,4 +788,4 @@ This project is licensed under the MIT License.
 
 ---
 
-_Last updated: October 31, 2025_
+_Last updated: December 16, 2025_
