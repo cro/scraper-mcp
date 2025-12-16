@@ -23,6 +23,29 @@ except ImportError:
     APIStatusError = Exception  # type: ignore[misc, assignment]
 
 
+def _extract_prompt(messages: list[dict[str, str]], max_length: int = 80) -> str:
+    """Extract user prompt from messages for logging.
+
+    Args:
+        messages: List of message dicts with 'role' and 'content' keys
+        max_length: Maximum length before truncation
+
+    Returns:
+        Truncated prompt string suitable for display
+    """
+    # Find the last user message
+    for msg in reversed(messages):
+        if msg.get("role") == "user":
+            content = msg.get("content", "")
+            # Clean up whitespace
+            content = " ".join(content.split())
+            # Truncate if needed
+            if len(content) > max_length:
+                return content[: max_length - 3] + "..."
+            return content
+    return "(no prompt)"
+
+
 class PerplexityService:
     """Service for interacting with Perplexity AI API.
 
@@ -78,8 +101,9 @@ class PerplexityService:
             PerplexityResponse with content, citations, and usage stats
         """
         if not self._client:
+            prompt = _extract_prompt(messages)
             record_request(
-                url=f"perplexity://{model or self.default_model}",
+                url=f"perplexity://{model or self.default_model}  \"{prompt}\"",
                 success=False,
                 status_code=503,
                 elapsed_ms=0,
@@ -94,6 +118,10 @@ class PerplexityService:
         model = model or self.default_model
         temperature = temperature if temperature is not None else self.default_temperature
         max_tokens = max_tokens if max_tokens is not None else self.default_max_tokens
+
+        # Extract prompt for metrics logging
+        prompt = _extract_prompt(messages)
+        metrics_url = f"perplexity://{model}  \"{prompt}\""
 
         start_time = time.time()
 
@@ -134,7 +162,7 @@ class PerplexityService:
 
             # Record successful request in metrics
             record_request(
-                url=f"perplexity://{model}",
+                url=metrics_url,
                 success=True,
                 status_code=200,
                 elapsed_ms=elapsed_ms,
@@ -155,7 +183,7 @@ class PerplexityService:
         except RateLimitError as e:
             elapsed_ms = int((time.time() - start_time) * 1000)
             record_request(
-                url=f"perplexity://{model}",
+                url=metrics_url,
                 success=False,
                 status_code=429,
                 elapsed_ms=elapsed_ms,
@@ -170,7 +198,7 @@ class PerplexityService:
         except BadRequestError as e:
             elapsed_ms = int((time.time() - start_time) * 1000)
             record_request(
-                url=f"perplexity://{model}",
+                url=metrics_url,
                 success=False,
                 status_code=400,
                 elapsed_ms=elapsed_ms,
@@ -181,7 +209,7 @@ class PerplexityService:
         except APIStatusError as e:
             elapsed_ms = int((time.time() - start_time) * 1000)
             record_request(
-                url=f"perplexity://{model}",
+                url=metrics_url,
                 success=False,
                 status_code=500,
                 elapsed_ms=elapsed_ms,
@@ -192,7 +220,7 @@ class PerplexityService:
         except Exception as e:
             elapsed_ms = int((time.time() - start_time) * 1000)
             record_request(
-                url=f"perplexity://{model}",
+                url=metrics_url,
                 success=False,
                 status_code=500,
                 elapsed_ms=elapsed_ms,
