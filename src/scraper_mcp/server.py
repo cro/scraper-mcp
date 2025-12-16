@@ -10,6 +10,7 @@ from scraper_mcp.admin.router import (
     api_cache_clear,
     api_config_get,
     api_config_update,
+    api_request_details,
     api_stats,
     health_check,
 )
@@ -57,6 +58,7 @@ mcp.custom_route("/api/stats", methods=["GET"])(api_stats)
 mcp.custom_route("/api/cache/clear", methods=["POST"])(api_cache_clear)
 mcp.custom_route("/api/config", methods=["GET"])(api_config_get)
 mcp.custom_route("/api/config", methods=["POST"])(api_config_update)
+mcp.custom_route("/api/requests/{request_id}/details", methods=["GET"])(api_request_details)
 
 # Register dashboard route
 mcp.custom_route("/", methods=["GET"])(dashboard_view)

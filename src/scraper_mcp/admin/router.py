@@ -9,6 +9,8 @@ from scraper_mcp.admin.service import (
     get_stats,
     update_config,
 )
+from scraper_mcp.cache_manager import get_cache_manager
+from scraper_mcp.metrics import get_request_by_id
 
 
 async def health_check(request: Request) -> JSONResponse:
@@ -78,3 +80,78 @@ async def api_config_update(request: Request) -> JSONResponse:
             },
             status_code=500
         )
+
+
+async def api_request_details(request: Request) -> JSONResponse:
+    """Get detailed information about a specific request by ID.
+
+    For Perplexity requests: returns inline perplexity_data
+    (model, prompt, response, citations, usage).
+    For Scraper requests: looks up cached content by cache_key.
+
+    Args:
+        request: HTTP request with request_id path parameter
+
+    Returns:
+        JSONResponse with request details or error
+    """
+    request_id = request.path_params.get("request_id", "")
+
+    if not request_id:
+        return JSONResponse(
+            {"status": "error", "message": "Request ID is required"},
+            status_code=400
+        )
+
+    # Find the request in metrics
+    metrics = get_request_by_id(request_id)
+    if not metrics:
+        return JSONResponse(
+            {"status": "error", "message": "Request not found"},
+            status_code=404
+        )
+
+    # Build base response
+    response = {
+        "request_id": metrics.request_id,
+        "request_type": metrics.request_type,
+        "url": metrics.url,
+        "timestamp": metrics.timestamp.isoformat(),
+        "success": metrics.success,
+        "status_code": metrics.status_code,
+        "elapsed_ms": metrics.elapsed_ms,
+        "attempts": metrics.attempts,
+        "error": metrics.error,
+    }
+
+    # Add type-specific details
+    if metrics.request_type == "perplexity":
+        # Perplexity requests have inline data
+        if metrics.perplexity_data:
+            response["perplexity"] = metrics.perplexity_data
+        else:
+            response["perplexity"] = None
+            response["details_unavailable"] = "Perplexity response data not captured"
+    else:
+        # Scraper requests - lookup from cache
+        response["cache_key"] = metrics.cache_key
+        if metrics.cache_key:
+            cache = get_cache_manager()
+            cached_content = cache.get(metrics.cache_key)
+            if cached_content:
+                # Return content preview (first 5000 chars)
+                content_preview = cached_content
+                if isinstance(cached_content, str) and len(cached_content) > 5000:
+                    content_preview = cached_content[:5000]
+                    response["content_truncated"] = True
+                    response["full_content_length"] = len(cached_content)
+                response["cached_content"] = content_preview
+            else:
+                response["cached_content"] = None
+                response["cache_expired"] = True
+                response["details_unavailable"] = "Content no longer cached"
+        else:
+            response["cached_content"] = None
+            response["details_unavailable"] = "Cache key not available"
+
+    return JSONResponse(response)

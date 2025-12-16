@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import time
+import uuid
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -21,6 +21,14 @@ class RequestMetrics:
     attempts: int = 1
     error: str | None = None
 
+    # Request identification and type
+    request_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    request_type: str = "scraper"  # "scraper" | "perplexity"
+    cache_key: str | None = None  # For scraper: enables cache lookup
+
+    # Perplexity-specific data (None for scraper requests)
+    perplexity_data: dict[str, Any] | None = None  # {model, full_prompt, content, citations, usage}
+
 
 @dataclass
 class ServerMetrics:
@@ -31,8 +39,8 @@ class ServerMetrics:
     successful_requests: int = 0
     failed_requests: int = 0
     total_retries: int = 0
-    recent_requests: deque[RequestMetrics] = field(default_factory=lambda: deque(maxlen=50))
-    recent_errors: deque[RequestMetrics] = field(default_factory=lambda: deque(maxlen=20))
+    recent_requests: deque[RequestMetrics] = field(default_factory=lambda: deque(maxlen=100))
+    recent_errors: deque[RequestMetrics] = field(default_factory=lambda: deque(maxlen=50))
 
     def record_request(
         self,
@@ -42,7 +50,10 @@ class ServerMetrics:
         elapsed_ms: float | None = None,
         attempts: int = 1,
         error: str | None = None,
-    ) -> None:
+        request_type: str = "scraper",
+        cache_key: str | None = None,
+        perplexity_data: dict[str, Any] | None = None,
+    ) -> RequestMetrics:
         """Record a request in the metrics.
 
         Args:
@@ -52,6 +63,12 @@ class ServerMetrics:
             elapsed_ms: Time taken in milliseconds
             attempts: Number of attempts made (1 = no retries)
             error: Error message if failed
+            request_type: Type of request ("scraper" or "perplexity")
+            cache_key: Cache key for scraper requests (enables cache lookup)
+            perplexity_data: Full response data for Perplexity requests
+
+        Returns:
+            The created RequestMetrics object
         """
         self.total_requests += 1
 
@@ -73,6 +90,9 @@ class ServerMetrics:
             elapsed_ms=elapsed_ms,
             attempts=attempts,
             error=error,
+            request_type=request_type,
+            cache_key=cache_key,
+            perplexity_data=perplexity_data,
         )
 
         # Add to recent requests
@@ -81,6 +101,8 @@ class ServerMetrics:
         # Add to recent errors if failed
         if not success:
             self.recent_errors.append(metrics)
+
+        return metrics
 
     def get_uptime_seconds(self) -> float:
         """Get server uptime in seconds."""
@@ -119,6 +141,7 @@ class ServerMetrics:
             },
             "recent_requests": [
                 {
+                    "request_id": r.request_id,
                     "url": r.url,
                     "timestamp": r.timestamp.isoformat(),
                     "success": r.success,
@@ -126,18 +149,21 @@ class ServerMetrics:
                     "elapsed_ms": r.elapsed_ms,
                     "attempts": r.attempts,
                     "error": r.error,
+                    "request_type": r.request_type,
                 }
-                for r in list(self.recent_requests)[-10:][::-1]  # Last 10 requests, newest first
+                for r in list(self.recent_requests)[::-1]  # All requests, newest first
             ],
             "recent_errors": [
                 {
+                    "request_id": r.request_id,
                     "url": r.url,
                     "timestamp": r.timestamp.isoformat(),
                     "status_code": r.status_code,
                     "attempts": r.attempts,
                     "error": r.error,
+                    "request_type": r.request_type,
                 }
-                for r in list(self.recent_errors)[-10:][::-1]  # Last 10 errors, newest first
+                for r in list(self.recent_errors)[::-1]  # All errors, newest first
             ],
         }
 
@@ -176,7 +202,10 @@ def record_request(
     elapsed_ms: float | None = None,
     attempts: int = 1,
     error: str | None = None,
-) -> None:
+    request_type: str = "scraper",
+    cache_key: str | None = None,
+    perplexity_data: dict[str, Any] | None = None,
+) -> RequestMetrics:
     """Record a request in the global metrics.
 
     Args:
@@ -186,5 +215,29 @@ def record_request(
         elapsed_ms: Time taken in milliseconds
         attempts: Number of attempts made (1 = no retries)
         error: Error message if failed
+        request_type: Type of request ("scraper" or "perplexity")
+        cache_key: Cache key for scraper requests
+        perplexity_data: Full response data for Perplexity requests
+
+    Returns:
+        The created RequestMetrics object
     """
-    _metrics.record_request(url, success, status_code, elapsed_ms, attempts, error)
+    return _metrics.record_request(
+        url, success, status_code, elapsed_ms, attempts, error,
+        request_type, cache_key, perplexity_data
+    )
+
+
+def get_request_by_id(request_id: str) -> RequestMetrics | None:
+    """Find a request by its ID.
+
+    Args:
+        request_id: The UUID of the request
+
+    Returns:
+        RequestMetrics if found, None otherwise
+    """
+    for r in _metrics.recent_requests:
+        if r.request_id == request_id:
+            return r
+    return None

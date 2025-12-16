@@ -263,6 +263,201 @@
         .pulse {
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            position: relative;
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        .modal-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #737373;
+            padding: 0;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            color: #1a1a1a;
+        }
+        .modal-tabs {
+            display: flex;
+            gap: 0;
+            padding: 0 1.5rem;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        .modal-tab {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #737373;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            margin-bottom: -1px;
+        }
+        .modal-tab:hover {
+            color: #1a1a1a;
+        }
+        .modal-tab.active {
+            color: #1a1a1a;
+            border-bottom-color: #1a1a1a;
+        }
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-section {
+            margin-bottom: 1.5rem;
+        }
+        .modal-section:last-child {
+            margin-bottom: 0;
+        }
+        .modal-section-title {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #737373;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        .modal-section-content {
+            font-size: 0.875rem;
+            color: #1a1a1a;
+            line-height: 1.5;
+        }
+        .modal-section-content pre {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.75rem;
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .modal-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .modal-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .modal-stat-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #737373;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .modal-stat-value {
+            font-size: 0.875rem;
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e5e5;
+        }
+        .modal-footer .btn {
+            width: auto;
+            margin: 0;
+        }
+        .citation-list {
+            list-style: decimal;
+            padding-left: 1.25rem;
+            margin: 0;
+        }
+        .citation-list li {
+            margin-bottom: 0.25rem;
+        }
+        .citation-list a {
+            color: #2563eb;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        .citation-list a:hover {
+            text-decoration: underline;
+        }
+        .request-table tbody tr {
+            cursor: pointer;
+        }
+        .request-table tbody tr:hover {
+            background: #f0f0f0;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+            border-radius: 4px;
+        }
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .badge-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .badge-perplexity {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+        .badge-scraper {
+            background: #f0fdf4;
+            color: #166534;
+        }
         .btn {
             display: inline-block;
             padding: 0.5rem 0.5rem;
@@ -449,7 +644,7 @@
         </div>
 
         <div class="card">
-            <h2>Recent Requests (Last 10)</h2>
+            <h2>Recent Requests</h2>
             <div class="request-table-container">
                 <table class="request-table">
                     <thead>
@@ -489,6 +684,35 @@
         <div class="refresh-indicator" id="refresh-indicator">
             Auto-refresh: <span id="countdown">10</span>s
         </div>
+        </div>
+
+        <!-- Request Details Modal -->
+        <div id="requestModal" class="modal">
+            <div class="modal-overlay" onclick="closeRequestModal()"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Request Details</h2>
+                    <button class="modal-close" onclick="closeRequestModal()">&times;</button>
+                </div>
+                <div class="modal-tabs">
+                    <button class="modal-tab active" onclick="switchModalTab(event, 'formatted')">Formatted</button>
+                    <button class="modal-tab" onclick="switchModalTab(event, 'raw')">Raw JSON</button>
+                </div>
+                <div class="modal-body">
+                    <div id="modal-formatted" class="modal-tab-content active">
+                        <div id="modal-loading" style="text-align: center; padding: 2rem; color: #737373;">Loading...</div>
+                        <div id="modal-error" style="display: none; text-align: center; padding: 2rem; color: #ef4444;"></div>
+                        <div id="modal-details" style="display: none;"></div>
+                    </div>
+                    <div id="modal-raw" class="modal-tab-content" style="display: none;">
+                        <pre id="modal-json" style="background: #f5f5f5; padding: 1rem; border-radius: 6px; font-size: 0.75rem; max-height: 500px; overflow: auto;"><code></code></pre>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn" onclick="copyRequestDetails()">Copy JSON</button>
+                    <button class="btn" onclick="closeRequestModal()">Close</button>
+                </div>
+            </div>
         </div>
 
         <div id="playground-tab" class="tab-content">
@@ -697,10 +921,13 @@
                     const statusText = req.success ? `${req.status_code}` : `${req.status_code || 'ERR'}`;
                     const timestamp = new Date(req.timestamp).toLocaleTimeString();
                     const responseTime = req.elapsed_ms ? `${req.elapsed_ms.toFixed(0)}ms` : '-';
+                    const typeBadge = req.request_type === 'perplexity'
+                        ? '<span class="badge badge-perplexity">AI</span>'
+                        : '';
                     return `
-                        <tr>
+                        <tr data-request-id="${req.request_id}" onclick="openRequestModal('${req.request_id}')">
                             <td class="time-col">${timestamp}</td>
-                            <td class="status-col ${statusClass}">${statusText}</td>
+                            <td class="status-col ${statusClass}">${statusText} ${typeBadge}</td>
                             <td class="response-time-col">${responseTime}</td>
                             <td class="url-col" title="${escapeHtml(req.url)}">${escapeHtml(req.url)}</td>
                         </tr>
@@ -1088,6 +1315,267 @@
 
         // Setup playground form handler
         document.getElementById('playground-form').addEventListener('submit', runPlaygroundTool);
+
+        // Modal state
+        let currentRequestData = null;
+
+        async function openRequestModal(requestId) {
+            const modal = document.getElementById('requestModal');
+            const loading = document.getElementById('modal-loading');
+            const error = document.getElementById('modal-error');
+            const details = document.getElementById('modal-details');
+            const jsonEl = document.getElementById('modal-json').querySelector('code');
+
+            // Show modal and loading state
+            modal.classList.add('active');
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            details.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/requests/${requestId}/details`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to load request details');
+                }
+
+                currentRequestData = data;
+
+                // Render raw JSON
+                jsonEl.textContent = JSON.stringify(data, null, 2);
+
+                // Render formatted view
+                renderFormattedDetails(data);
+
+                loading.style.display = 'none';
+                details.style.display = 'block';
+
+            } catch (err) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = err.message;
+            }
+        }
+
+        function closeRequestModal() {
+            document.getElementById('requestModal').classList.remove('active');
+            currentRequestData = null;
+        }
+
+        function switchModalTab(event, tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.modal-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.getElementById('modal-formatted').style.display = tabName === 'formatted' ? 'block' : 'none';
+            document.getElementById('modal-raw').style.display = tabName === 'raw' ? 'block' : 'none';
+        }
+
+        function copyRequestDetails() {
+            if (currentRequestData) {
+                navigator.clipboard.writeText(JSON.stringify(currentRequestData, null, 2)).then(() => {
+                    alert('Copied to clipboard!');
+                });
+            }
+        }
+
+        function renderFormattedDetails(data) {
+            const detailsEl = document.getElementById('modal-details');
+            const isPerplexity = data.request_type === 'perplexity';
+
+            let html = `
+                <div class="modal-section">
+                    <div class="modal-section-title">Overview</div>
+                    <div class="modal-grid">
+                        <div class="modal-stat">
+                            <span class="modal-stat-label">Type</span>
+                            <span class="modal-stat-value">
+                                <span class="badge ${isPerplexity ? 'badge-perplexity' : 'badge-scraper'}">
+                                    ${isPerplexity ? 'Perplexity AI' : 'Web Scraper'}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="modal-stat">
+                            <span class="modal-stat-label">Status</span>
+                            <span class="modal-stat-value">
+                                <span class="badge ${data.success ? 'badge-success' : 'badge-error'}">
+                                    ${data.success ? 'Success' : 'Failed'}
+                                </span>
+                                ${data.status_code ? ` (${data.status_code})` : ''}
+                            </span>
+                        </div>
+                        <div class="modal-stat">
+                            <span class="modal-stat-label">Timestamp</span>
+                            <span class="modal-stat-value">${new Date(data.timestamp).toLocaleString()}</span>
+                        </div>
+                        <div class="modal-stat">
+                            <span class="modal-stat-label">Duration</span>
+                            <span class="modal-stat-value">${data.elapsed_ms ? data.elapsed_ms + 'ms' : '-'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // URL/Target
+            html += `
+                <div class="modal-section">
+                    <div class="modal-section-title">${isPerplexity ? 'Target' : 'URL'}</div>
+                    <div class="modal-section-content" style="word-break: break-all;">
+                        ${escapeHtml(data.url)}
+                    </div>
+                </div>
+            `;
+
+            // Error if present
+            if (data.error) {
+                html += `
+                    <div class="modal-section">
+                        <div class="modal-section-title">Error</div>
+                        <div class="modal-section-content" style="color: #ef4444;">
+                            ${escapeHtml(data.error)}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (isPerplexity && data.perplexity) {
+                // Perplexity-specific details
+                const p = data.perplexity;
+
+                if (p.model) {
+                    html += `
+                        <div class="modal-section">
+                            <div class="modal-section-title">Model</div>
+                            <div class="modal-section-content">${escapeHtml(p.model)}</div>
+                        </div>
+                    `;
+                }
+
+                if (p.full_prompt) {
+                    html += `
+                        <div class="modal-section">
+                            <div class="modal-section-title">Prompt</div>
+                            <div class="modal-section-content">
+                                <pre>${escapeHtml(p.full_prompt)}</pre>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (p.content) {
+                    const content = p.content.length > 3000
+                        ? p.content.substring(0, 3000) + '\n\n... [truncated]'
+                        : p.content;
+                    html += `
+                        <div class="modal-section">
+                            <div class="modal-section-title">Response</div>
+                            <div class="modal-section-content">
+                                <pre>${escapeHtml(content)}</pre>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (p.citations && p.citations.length > 0) {
+                    html += `
+                        <div class="modal-section">
+                            <div class="modal-section-title">Citations (${p.citations.length})</div>
+                            <div class="modal-section-content">
+                                <ol class="citation-list">
+                                    ${p.citations.map(c => `<li><a href="${escapeHtml(c)}" target="_blank">${escapeHtml(c)}</a></li>`).join('')}
+                                </ol>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (p.usage && Object.keys(p.usage).length > 0) {
+                    html += `
+                        <div class="modal-section">
+                            <div class="modal-section-title">Token Usage</div>
+                            <div class="modal-grid">
+                                ${p.usage.prompt_tokens !== undefined ? `
+                                    <div class="modal-stat">
+                                        <span class="modal-stat-label">Prompt</span>
+                                        <span class="modal-stat-value">${p.usage.prompt_tokens.toLocaleString()}</span>
+                                    </div>
+                                ` : ''}
+                                ${p.usage.completion_tokens !== undefined ? `
+                                    <div class="modal-stat">
+                                        <span class="modal-stat-label">Completion</span>
+                                        <span class="modal-stat-value">${p.usage.completion_tokens.toLocaleString()}</span>
+                                    </div>
+                                ` : ''}
+                                ${p.usage.total_tokens !== undefined ? `
+                                    <div class="modal-stat">
+                                        <span class="modal-stat-label">Total</span>
+                                        <span class="modal-stat-value">${p.usage.total_tokens.toLocaleString()}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            } else if (!isPerplexity) {
+                // Scraper-specific details
+                if (data.attempts && data.attempts > 1) {
+                    html += `
+                        <div class="modal-section">
+                            <div class="modal-section-title">Retry Info</div>
+                            <div class="modal-section-content">
+                                ${data.attempts} attempts
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (data.cache_expired) {
+                    html += `
+                        <div class="modal-section">
+                            <div class="modal-section-title">Cache Status</div>
+                            <div class="modal-section-content" style="color: #f59e0b;">
+                                Content no longer cached. The cached response has expired or been evicted.
+                            </div>
+                        </div>
+                    `;
+                } else if (data.cached_content) {
+                    const content = typeof data.cached_content === 'string'
+                        ? data.cached_content
+                        : JSON.stringify(data.cached_content, null, 2);
+                    const displayContent = content.length > 5000
+                        ? content.substring(0, 5000) + '\n\n... [truncated]'
+                        : content;
+                    html += `
+                        <div class="modal-section">
+                            <div class="modal-section-title">Cached Content ${data.content_truncated ? `(${data.full_content_length.toLocaleString()} chars total)` : ''}</div>
+                            <div class="modal-section-content">
+                                <pre>${escapeHtml(displayContent)}</pre>
+                            </div>
+                        </div>
+                    `;
+                } else if (data.details_unavailable) {
+                    html += `
+                        <div class="modal-section">
+                            <div class="modal-section-title">Content</div>
+                            <div class="modal-section-content" style="color: #737373;">
+                                ${escapeHtml(data.details_unavailable)}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            detailsEl.innerHTML = html;
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeRequestModal();
+            }
+        });
     </script>
 </body>
 </html>

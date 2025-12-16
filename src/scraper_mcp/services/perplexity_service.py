@@ -24,7 +24,7 @@ except ImportError:
 
 
 def _extract_prompt(messages: list[dict[str, str]], max_length: int = 80) -> str:
-    """Extract user prompt from messages for logging.
+    """Extract user prompt from messages for logging (truncated for URL display).
 
     Args:
         messages: List of message dicts with 'role' and 'content' keys
@@ -44,6 +44,21 @@ def _extract_prompt(messages: list[dict[str, str]], max_length: int = 80) -> str
                 return content[: max_length - 3] + "..."
             return content
     return "(no prompt)"
+
+
+def _extract_full_prompt(messages: list[dict[str, str]]) -> str:
+    """Extract full untruncated user prompt from messages.
+
+    Args:
+        messages: List of message dicts with 'role' and 'content' keys
+
+    Returns:
+        Full prompt string (not truncated)
+    """
+    for msg in reversed(messages):
+        if msg.get("role") == "user":
+            return msg.get("content", "")
+    return ""
 
 
 class PerplexityService:
@@ -109,6 +124,7 @@ class PerplexityService:
                 elapsed_ms=0,
                 attempts=1,
                 error="Perplexity service not available",
+                request_type="perplexity",
             )
             return self._error_response(
                 "Perplexity service not available", model or self.default_model
@@ -160,13 +176,21 @@ class PerplexityService:
                     "total_tokens": completion.usage.total_tokens or 0,
                 }
 
-            # Record successful request in metrics
+            # Record successful request in metrics with full response data
             record_request(
                 url=metrics_url,
                 success=True,
                 status_code=200,
                 elapsed_ms=elapsed_ms,
                 attempts=1,
+                request_type="perplexity",
+                perplexity_data={
+                    "model": model,
+                    "full_prompt": _extract_full_prompt(messages),
+                    "content": content,
+                    "citations": citations,
+                    "usage": usage,
+                },
             )
 
             return PerplexityResponse(
@@ -189,6 +213,7 @@ class PerplexityService:
                 elapsed_ms=elapsed_ms,
                 attempts=1,
                 error=f"Rate limit exceeded: {e}",
+                request_type="perplexity",
             )
             return self._error_response(
                 f"Rate limit exceeded: {e}",
@@ -204,6 +229,7 @@ class PerplexityService:
                 elapsed_ms=elapsed_ms,
                 attempts=1,
                 error=f"Bad request: {e}",
+                request_type="perplexity",
             )
             return self._error_response(f"Bad request: {e}", model)
         except APIStatusError as e:
@@ -215,6 +241,7 @@ class PerplexityService:
                 elapsed_ms=elapsed_ms,
                 attempts=1,
                 error=f"API error: {e}",
+                request_type="perplexity",
             )
             return self._error_response(f"API error: {e}", model)
         except Exception as e:
@@ -226,6 +253,7 @@ class PerplexityService:
                 elapsed_ms=elapsed_ms,
                 attempts=1,
                 error=f"Unexpected error: {type(e).__name__}: {e}",
+                request_type="perplexity",
             )
             return self._error_response(f"Unexpected error: {type(e).__name__}: {e}", model)
 
