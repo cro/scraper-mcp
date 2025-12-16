@@ -1,4 +1,4 @@
-"""MCP tool definitions for web scraping."""
+"""MCP tool definitions for web scraping and external API integrations."""
 
 from __future__ import annotations
 
@@ -7,7 +7,9 @@ from mcp.server.fastmcp import FastMCP
 from scraper_mcp.admin.service import DEFAULT_CONCURRENCY
 from scraper_mcp.cache import clear_all_cache, clear_expired_cache, get_cache_stats
 from scraper_mcp.models.links import BatchLinksResponse
+from scraper_mcp.models.perplexity import PerplexityResponse
 from scraper_mcp.models.scrape import BatchScrapeResponse
+from scraper_mcp.services.perplexity_service import get_perplexity_service
 from scraper_mcp.tools.service import (
     batch_extract_links,
     batch_scrape_urls,
@@ -213,3 +215,82 @@ def register_cache_tools(mcp: FastMCP) -> None:
     mcp.tool()(cache_stats)
     mcp.tool()(cache_clear_expired)
     mcp.tool()(cache_clear_all)
+
+
+# =============================================================================
+# Perplexity AI Tools
+# =============================================================================
+
+
+async def perplexity_ask(
+    messages: list[dict[str, str]],
+    model: str = "sonar",
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+) -> PerplexityResponse:
+    """Engages in a conversation using the Perplexity to search the internet and answer questions.
+
+    Accepts an array of messages (each with a role and content) and returns a chat
+    completion response from the Perplexity model.
+
+    Args:
+        messages: Array of conversation messages, each with 'role' (system/user/assistant)
+                  and 'content' keys. Example: [{"role": "user", "content": "What is AI?"}]
+        model: Model to use - "sonar" for general queries, "sonar-pro" for complex analysis
+        temperature: Response creativity (0-2, default: 0.3). Lower = more focused.
+        max_tokens: Maximum response length in tokens (default: 4000)
+
+    Returns:
+        PerplexityResponse with content, citations, model used, and usage statistics
+    """
+    service = get_perplexity_service()
+    return await service.chat(
+        messages=messages,
+        model=model,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+
+
+async def perplexity_reason(
+    query: str,
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+) -> PerplexityResponse:
+    """Uses the Perplexity reasoning model to perform complex reasoning tasks.
+
+    Accepts a query string and returns a comprehensive reasoned response.
+    Uses the sonar-reasoning-pro model optimized for analytical and multi-step reasoning.
+
+    Args:
+        query: The query or problem to reason about. Can be a complex question
+               requiring analysis, comparison, or multi-step reasoning.
+        temperature: Response creativity (0-2, default: 0.3). Lower = more focused.
+        max_tokens: Maximum response length in tokens (default: 4000)
+
+    Returns:
+        PerplexityResponse with reasoned content, citations, and usage statistics
+    """
+    service = get_perplexity_service()
+    return await service.reason(
+        query=query,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+
+
+def register_perplexity_tools(mcp: FastMCP) -> None:
+    """Register Perplexity AI tools on the MCP server.
+
+    These tools are only registered when PERPLEXITY_API_KEY is set in the
+    environment. They provide web-grounded AI search and reasoning capabilities.
+
+    Args:
+        mcp: FastMCP server instance to register tools on
+
+    Note:
+        Perplexity tools require a valid API key from https://perplexity.ai
+        Set PERPLEXITY_API_KEY environment variable to enable these tools.
+    """
+    mcp.tool()(perplexity_ask)
+    mcp.tool()(perplexity_reason)

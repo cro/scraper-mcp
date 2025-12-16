@@ -34,7 +34,8 @@ RUN uv pip install --system \
     beautifulsoup4 \
     markdownify \
     lxml \
-    diskcache
+    diskcache \
+    perplexityai
 
 # Copy application code last (invalidates fewer layers on source changes)
 COPY src/ ./src/

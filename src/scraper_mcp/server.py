@@ -14,7 +14,12 @@ from scraper_mcp.admin.router import (
     health_check,
 )
 from scraper_mcp.dashboard.router import dashboard as dashboard_view
-from scraper_mcp.tools.router import register_cache_tools, register_scraping_tools
+from scraper_mcp.services.perplexity_service import PerplexityService
+from scraper_mcp.tools.router import (
+    register_cache_tools,
+    register_perplexity_tools,
+    register_scraping_tools,
+)
 
 # Configuration: Enable cache management tools via environment variable
 # Set ENABLE_CACHE_TOOLS=true to expose cache_stats, cache_clear_expired, and cache_clear_all
@@ -40,6 +45,10 @@ register_scraping_tools(mcp)
 # Register optional cache management tools
 if ENABLE_CACHE_TOOLS:
     register_cache_tools(mcp)
+
+# Register Perplexity AI tools (if API key is configured)
+if PerplexityService.is_available():
+    register_perplexity_tools(mcp)
 
 
 # Register admin API routes

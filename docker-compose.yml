@@ -29,6 +29,11 @@ services:
       - http_proxy=${http_proxy:-}
       - https_proxy=${https_proxy:-}
       - no_proxy=${no_proxy:-}
+      # Perplexity AI configuration (optional, enabled if API key provided)
+      - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY:-}
+      - PERPLEXITY_MODEL=${PERPLEXITY_MODEL:-sonar}
+      - PERPLEXITY_TEMPERATURE=${PERPLEXITY_TEMPERATURE:-0.3}
+      - PERPLEXITY_MAX_TOKENS=${PERPLEXITY_MAX_TOKENS:-4000}
       # ScrapeOps proxy configuration (optional, enabled if API key provided)
       - SCRAPEOPS_API_KEY=${SCRAPEOPS_API_KEY:-}
       - SCRAPEOPS_RENDER_JS=${SCRAPEOPS_RENDER_JS:-false}
