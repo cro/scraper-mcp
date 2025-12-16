@@ -1495,7 +1495,7 @@
                     html += `
                         <div class="modal-section">
                             <div class="modal-section-title">Token Usage</div>
-                            <div class="modal-grid">
+                            <div class="modal-grid" style="grid-template-columns: repeat(3, 1fr);">
                                 ${p.usage.prompt_tokens !== undefined ? `
                                     <div class="modal-stat">
                                         <span class="modal-stat-label">Prompt</span>

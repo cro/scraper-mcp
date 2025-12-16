@@ -247,6 +247,7 @@ class RequestsProvider(ScraperProvider):
                 logger.debug(f"Cache HIT for URL: {original_url}")
                 # Add cache metadata
                 cached_result.metadata["from_cache"] = True
+                cached_result.metadata["cache_key"] = cache_key
                 return cached_result
 
             logger.debug(f"Cache MISS for URL: {original_url}")
@@ -287,6 +288,10 @@ class RequestsProvider(ScraperProvider):
                 if self.scrapeops_enabled:
                     metadata["scrapeops_enabled"] = True
                     metadata["scrapeops_render_js"] = self.scrapeops_render_js
+
+                # Include cache_key in metadata for downstream use
+                if cache_key:
+                    metadata["cache_key"] = cache_key
 
                 result = ScrapeResult(
                     url=response.url,  # Use final URL after redirects

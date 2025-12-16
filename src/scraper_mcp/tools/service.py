@@ -6,7 +6,6 @@ import asyncio
 from typing import Any
 
 from scraper_mcp.admin.service import DEFAULT_CONCURRENCY
-from scraper_mcp.cache_manager import get_cache_manager
 from scraper_mcp.core.providers import default_provider
 from scraper_mcp.metrics import record_request
 from scraper_mcp.models.links import BatchLinksResponse, LinkResultItem, LinksResponse
@@ -119,8 +118,8 @@ async def scrape_single_url_safe(
             # Clean metadata to remove redundant fields
             metadata = clean_metadata(result.metadata, css_selector, elements_matched)
 
-            # Generate cache key for potential lookup
-            cache_key = get_cache_manager().generate_cache_key(url)
+            # Get cache key from provider (ensures key matches what was actually cached)
+            cache_key = result.metadata.get("cache_key")
 
             # Record successful request metrics
             record_request(
@@ -256,8 +255,8 @@ async def scrape_single_url_markdown_safe(
             # Clean metadata to remove redundant fields
             metadata = clean_metadata(metadata, css_selector, elements_matched)
 
-            # Generate cache key for potential lookup
-            cache_key = get_cache_manager().generate_cache_key(url)
+            # Get cache key from provider (ensures key matches what was actually cached)
+            cache_key = result.metadata.get("cache_key")
 
             # Record successful request metrics
             record_request(
@@ -395,8 +394,8 @@ async def scrape_single_url_text_safe(
             # Clean metadata to remove redundant fields
             metadata = clean_metadata(metadata, css_selector, elements_matched)
 
-            # Generate cache key for potential lookup
-            cache_key = get_cache_manager().generate_cache_key(url)
+            # Get cache key from provider (ensures key matches what was actually cached)
+            cache_key = result.metadata.get("cache_key")
 
             # Record successful request metrics
             record_request(
@@ -520,8 +519,8 @@ async def extract_links_single_safe(
             # Extract links from (potentially filtered) content
             links = extract_links(content, base_url=result.url)
 
-            # Generate cache key for potential lookup
-            cache_key = get_cache_manager().generate_cache_key(url)
+            # Get cache key from provider (ensures key matches what was actually cached)
+            cache_key = result.metadata.get("cache_key")
 
             # Record successful request metrics
             record_request(
