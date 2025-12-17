@@ -5,8 +5,18 @@ from __future__ import annotations
 import uuid
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
+
+
+def utc_now() -> datetime:
+    """Get current UTC time with timezone info.
+
+    This ensures consistent timestamp handling regardless of server timezone.
+    JavaScript will correctly parse ISO strings with timezone and convert
+    to the user's local timezone via toLocaleString().
+    """
+    return datetime.now(timezone.utc)
 
 
 @dataclass
@@ -34,7 +44,7 @@ class RequestMetrics:
 class ServerMetrics:
     """Global server metrics."""
 
-    start_time: datetime = field(default_factory=datetime.now)
+    start_time: datetime = field(default_factory=utc_now)
     total_requests: int = 0
     successful_requests: int = 0
     failed_requests: int = 0
@@ -84,7 +94,7 @@ class ServerMetrics:
         # Create metrics record
         metrics = RequestMetrics(
             url=url,
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             success=success,
             status_code=status_code,
             elapsed_ms=elapsed_ms,
@@ -106,7 +116,7 @@ class ServerMetrics:
 
     def get_uptime_seconds(self) -> float:
         """Get server uptime in seconds."""
-        return (datetime.now() - self.start_time).total_seconds()
+        return (utc_now() - self.start_time).total_seconds()
 
     def get_success_rate(self) -> float:
         """Get success rate as percentage."""
