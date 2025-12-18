@@ -72,7 +72,7 @@
             gap: 0.75rem;
             margin-bottom: 0.75rem;
         }
-        @media (max-width: 1200px) {
+        @media (max-width: 1000px) {
             .grid {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -588,6 +588,8 @@
         <div class="tabs">
             <button class="tab active" onclick="switchTab(event, 'dashboard')">Dashboard</button>
             <button class="tab" onclick="switchTab(event, 'playground')">Playground</button>
+            <button class="tab" onclick="switchTab(event, 'resources')">Resources</button>
+            <button class="tab" onclick="switchTab(event, 'prompts')">Prompts</button>
             <button class="tab" onclick="switchTab(event, 'config')">Config</button>
         </div>
 
@@ -887,6 +889,106 @@
         </div>
     </div>
 
+    <!-- Resources Tab -->
+    <div id="resources-tab" class="tab-content">
+        <div class="grid">
+            <div class="card" style="grid-column: span 2;">
+                <h2>MCP Resources</h2>
+                <p style="color: #94a3b8; margin-bottom: 1rem;">Read-only data endpoints available via URI-based addressing.</p>
+
+                <div id="resources-loading" class="loading">Loading resources...</div>
+                <div id="resources-empty" class="alert alert-warning" style="display: none;">
+                    No resources available. Resources may be disabled via DISABLE_RESOURCES environment variable.
+                </div>
+
+                <div id="resources-list" style="display: none;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>URI</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resources-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid" style="margin-top: 1.5rem;">
+            <div class="card" style="grid-column: span 2;">
+                <h2>Resource Content</h2>
+                <div id="resource-content-placeholder" style="color: #64748b; font-style: italic;">
+                    Select a resource from the list above to view its content.
+                </div>
+                <div id="resource-content-display" style="display: none;">
+                    <div style="margin-bottom: 0.75rem;">
+                        <span class="stat-label">URI:</span>
+                        <code id="resource-uri-display" style="background: #1e293b; padding: 0.25rem 0.5rem; border-radius: 4px; margin-left: 0.5rem;"></code>
+                    </div>
+                    <pre id="resource-content" style="background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; max-height: 500px; white-space: pre-wrap;"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prompts Tab -->
+    <div id="prompts-tab" class="tab-content">
+        <div class="grid">
+            <div class="card" style="grid-column: span 2;">
+                <h2>MCP Prompts</h2>
+                <p style="color: #94a3b8; margin-bottom: 1rem;">Reusable, parameterized workflow templates for common tasks.</p>
+
+                <div id="prompts-loading" class="loading">Loading prompts...</div>
+                <div id="prompts-empty" class="alert alert-warning" style="display: none;">
+                    No prompts available. Prompts may be disabled via DISABLE_PROMPTS environment variable.
+                </div>
+
+                <div id="prompts-list" style="display: none;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Parameters</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="prompts-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid" style="margin-top: 1.5rem;">
+            <div class="card">
+                <h2>Prompt Parameters</h2>
+                <div id="prompt-params-placeholder" style="color: #64748b; font-style: italic;">
+                    Select a prompt from the list above to configure its parameters.
+                </div>
+                <form id="prompt-params-form" style="display: none;">
+                    <div id="prompt-params-fields"></div>
+                    <button type="submit" class="btn" style="margin-top: 1rem;">Generate Prompt</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Generated Prompt</h2>
+                <div id="prompt-output-placeholder" style="color: #64748b; font-style: italic;">
+                    Configure parameters and click "Generate Prompt" to see the output.
+                </div>
+                <div id="prompt-output-display" style="display: none;">
+                    <pre id="prompt-output" style="background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; max-height: 500px; white-space: pre-wrap;"></pre>
+                    <button class="btn" style="margin-top: 0.75rem;" onclick="copyPromptOutput()">Copy to Clipboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let countdown = 10;
         let countdownInterval;
@@ -1056,11 +1158,338 @@
             });
             document.getElementById(tabName + '-tab').classList.add('active');
 
-            // Load config when switching to config tab
+            // Load data when switching to specific tabs
             if (tabName === 'config') {
                 loadConfig();
+            } else if (tabName === 'resources') {
+                loadResources();
+            } else if (tabName === 'prompts') {
+                loadPrompts();
             }
         }
+
+        // ========== SSE Response Parser ==========
+        function parseSSEResponse(text) {
+            const lines = text.trim().split('\n');
+            let result = null;
+
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].startsWith('data: ')) {
+                    const data = lines[i].substring(6);
+                    try {
+                        const jsonrpcResponse = JSON.parse(data);
+                        if (jsonrpcResponse.result) {
+                            result = jsonrpcResponse.result;
+                        } else if (jsonrpcResponse.error) {
+                            throw new Error(jsonrpcResponse.error.message || 'Request failed');
+                        }
+                    } catch (e) {
+                        if (e.message && !e.message.includes('Unexpected')) {
+                            throw e;
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+
+        // ========== Resources Functions ==========
+        let resourcesCache = null;
+
+        async function loadResources() {
+            if (resourcesCache) {
+                displayResources(resourcesCache);
+                return;
+            }
+
+            document.getElementById('resources-loading').style.display = 'block';
+            document.getElementById('resources-list').style.display = 'none';
+            document.getElementById('resources-empty').style.display = 'none';
+
+            try {
+                const response = await fetch('/mcp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json, text/event-stream'
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: Date.now(),
+                        method: 'resources/list',
+                        params: {}
+                    })
+                });
+
+                const text = await response.text();
+                const result = parseSSEResponse(text);
+
+                if (result && result.resources && result.resources.length > 0) {
+                    resourcesCache = result.resources;
+                    displayResources(result.resources);
+                } else {
+                    document.getElementById('resources-loading').style.display = 'none';
+                    document.getElementById('resources-empty').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Failed to load resources:', error);
+                document.getElementById('resources-loading').style.display = 'none';
+                document.getElementById('resources-empty').style.display = 'block';
+                document.getElementById('resources-empty').textContent = 'Error loading resources: ' + error.message;
+            }
+        }
+
+        function displayResources(resources) {
+            document.getElementById('resources-loading').style.display = 'none';
+            document.getElementById('resources-list').style.display = 'block';
+
+            const tbody = document.getElementById('resources-table-body');
+            tbody.innerHTML = '';
+
+            resources.forEach(resource => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><code style="font-size: 0.85em;">${escapeHtml(resource.uri)}</code></td>
+                    <td>${escapeHtml(resource.name || '-')}</td>
+                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(resource.description || '-')}</td>
+                    <td><button class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.85em;" onclick="readResource('${escapeHtml(resource.uri)}')">Read</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function readResource(uri) {
+            document.getElementById('resource-content-placeholder').style.display = 'none';
+            document.getElementById('resource-content-display').style.display = 'block';
+            document.getElementById('resource-uri-display').textContent = uri;
+            document.getElementById('resource-content').textContent = 'Loading...';
+
+            try {
+                const response = await fetch('/mcp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json, text/event-stream'
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: Date.now(),
+                        method: 'resources/read',
+                        params: { uri: uri }
+                    })
+                });
+
+                const text = await response.text();
+                const result = parseSSEResponse(text);
+
+                if (result && result.contents && result.contents.length > 0) {
+                    const content = result.contents[0];
+                    let displayText = content.text || JSON.stringify(content, null, 2);
+
+                    // Try to pretty-print JSON
+                    try {
+                        const parsed = JSON.parse(displayText);
+                        displayText = JSON.stringify(parsed, null, 2);
+                    } catch (e) {
+                        // Not JSON, display as-is
+                    }
+
+                    document.getElementById('resource-content').textContent = displayText;
+                } else {
+                    document.getElementById('resource-content').textContent = 'No content returned';
+                }
+            } catch (error) {
+                console.error('Failed to read resource:', error);
+                document.getElementById('resource-content').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        // ========== Prompts Functions ==========
+        let promptsCache = null;
+        let selectedPrompt = null;
+
+        async function loadPrompts() {
+            if (promptsCache) {
+                displayPrompts(promptsCache);
+                return;
+            }
+
+            document.getElementById('prompts-loading').style.display = 'block';
+            document.getElementById('prompts-list').style.display = 'none';
+            document.getElementById('prompts-empty').style.display = 'none';
+
+            try {
+                const response = await fetch('/mcp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json, text/event-stream'
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: Date.now(),
+                        method: 'prompts/list',
+                        params: {}
+                    })
+                });
+
+                const text = await response.text();
+                const result = parseSSEResponse(text);
+
+                if (result && result.prompts && result.prompts.length > 0) {
+                    promptsCache = result.prompts;
+                    displayPrompts(result.prompts);
+                } else {
+                    document.getElementById('prompts-loading').style.display = 'none';
+                    document.getElementById('prompts-empty').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Failed to load prompts:', error);
+                document.getElementById('prompts-loading').style.display = 'none';
+                document.getElementById('prompts-empty').style.display = 'block';
+                document.getElementById('prompts-empty').textContent = 'Error loading prompts: ' + error.message;
+            }
+        }
+
+        function displayPrompts(prompts) {
+            document.getElementById('prompts-loading').style.display = 'none';
+            document.getElementById('prompts-list').style.display = 'block';
+
+            const tbody = document.getElementById('prompts-table-body');
+            tbody.innerHTML = '';
+
+            prompts.forEach(prompt => {
+                const args = prompt.arguments || [];
+                const argList = args.map(a => a.required ? a.name : `[${a.name}]`).join(', ');
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><code style="font-size: 0.85em;">${escapeHtml(prompt.name)}</code></td>
+                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(prompt.description || '-')}</td>
+                    <td><code style="font-size: 0.8em; color: #94a3b8;">${escapeHtml(argList) || 'none'}</code></td>
+                    <td><button class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.85em;" onclick="selectPrompt('${escapeHtml(prompt.name)}')">Select</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function selectPrompt(promptName) {
+            const prompt = promptsCache.find(p => p.name === promptName);
+            if (!prompt) return;
+
+            selectedPrompt = prompt;
+
+            document.getElementById('prompt-params-placeholder').style.display = 'none';
+            document.getElementById('prompt-params-form').style.display = 'block';
+            document.getElementById('prompt-output-placeholder').style.display = 'block';
+            document.getElementById('prompt-output-display').style.display = 'none';
+
+            const fieldsContainer = document.getElementById('prompt-params-fields');
+            fieldsContainer.innerHTML = `<h3 style="margin-bottom: 1rem; color: #e2e8f0;">${escapeHtml(prompt.name)}</h3>`;
+
+            const args = prompt.arguments || [];
+            if (args.length === 0) {
+                fieldsContainer.innerHTML += '<p style="color: #94a3b8;">This prompt has no parameters.</p>';
+            } else {
+                args.forEach(arg => {
+                    const fieldHtml = `
+                        <div class="form-group">
+                            <label for="prompt-arg-${arg.name}">
+                                ${escapeHtml(arg.name)}${arg.required ? ' <span style="color: #f87171;">*</span>' : ''}
+                            </label>
+                            <input type="text"
+                                   id="prompt-arg-${arg.name}"
+                                   name="${escapeHtml(arg.name)}"
+                                   placeholder="${escapeHtml(arg.description || '')}"
+                                   ${arg.required ? 'required' : ''}>
+                            ${arg.description ? `<small style="color: #64748b; display: block; margin-top: 0.25rem;">${escapeHtml(arg.description)}</small>` : ''}
+                        </div>
+                    `;
+                    fieldsContainer.innerHTML += fieldHtml;
+                });
+            }
+        }
+
+        async function generatePrompt(event) {
+            event.preventDefault();
+            if (!selectedPrompt) return;
+
+            const args = {};
+            const promptArgs = selectedPrompt.arguments || [];
+
+            promptArgs.forEach(arg => {
+                const input = document.getElementById(`prompt-arg-${arg.name}`);
+                if (input && input.value) {
+                    args[arg.name] = input.value;
+                }
+            });
+
+            document.getElementById('prompt-output-placeholder').style.display = 'none';
+            document.getElementById('prompt-output-display').style.display = 'block';
+            document.getElementById('prompt-output').textContent = 'Generating...';
+
+            try {
+                const response = await fetch('/mcp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json, text/event-stream'
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: Date.now(),
+                        method: 'prompts/get',
+                        params: {
+                            name: selectedPrompt.name,
+                            arguments: args
+                        }
+                    })
+                });
+
+                const text = await response.text();
+                const result = parseSSEResponse(text);
+
+                if (result && result.messages && result.messages.length > 0) {
+                    const content = result.messages.map(m => {
+                        if (typeof m.content === 'string') return m.content;
+                        if (m.content && m.content.text) return m.content.text;
+                        return JSON.stringify(m.content);
+                    }).join('\n\n');
+                    document.getElementById('prompt-output').textContent = content;
+                } else {
+                    document.getElementById('prompt-output').textContent = 'No prompt content returned';
+                }
+            } catch (error) {
+                console.error('Failed to generate prompt:', error);
+                document.getElementById('prompt-output').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        function copyPromptOutput() {
+            const content = document.getElementById('prompt-output').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                const btn = event.target;
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = 'Copy to Clipboard'; }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Attach form handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const promptForm = document.getElementById('prompt-params-form');
+            if (promptForm) {
+                promptForm.addEventListener('submit', generatePrompt);
+            }
+        });
 
         function toggleProxyInputs() {
             const enabled = document.getElementById('proxy_enabled').checked;
