@@ -123,6 +123,41 @@ Add to your MCP settings:
 }
 ```
 
+## Claude Code Skills
+
+This project includes [Agent Skills](https://docs.anthropic.com/en/docs/claude-code/skills) that provide Claude Code with specialized knowledge for using the scraper tools effectively.
+
+| Skill | Description |
+|-------|-------------|
+| [web-scraping](.claude/skills/web-scraping/SKILL.md) | CSS selectors, batch operations, retry configuration |
+| [perplexity](.claude/skills/perplexity/SKILL.md) | AI search, reasoning tasks, conversation patterns |
+
+### Install Skills
+
+Copy the skills to your Claude Code skills directory:
+
+```bash
+# Clone or download this repo, then:
+cp -r .claude/skills/web-scraping ~/.claude/skills/
+cp -r .claude/skills/perplexity ~/.claude/skills/
+```
+
+Or install directly:
+
+```bash
+# web-scraping skill
+mkdir -p ~/.claude/skills/web-scraping
+curl -o ~/.claude/skills/web-scraping/SKILL.md \
+  https://raw.githubusercontent.com/cotdp/scraper-mcp/main/.claude/skills/web-scraping/SKILL.md
+
+# perplexity skill
+mkdir -p ~/.claude/skills/perplexity
+curl -o ~/.claude/skills/perplexity/SKILL.md \
+  https://raw.githubusercontent.com/cotdp/scraper-mcp/main/.claude/skills/perplexity/SKILL.md
+```
+
+Once installed, Claude Code will automatically use these skills when performing web scraping or Perplexity AI tasks.
+
 ## Documentation
 
 | Document | Description |
