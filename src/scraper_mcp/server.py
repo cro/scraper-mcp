@@ -34,40 +34,58 @@ DISABLE_RESOURCES_ENV = os.getenv("DISABLE_RESOURCES", "false").lower() in ("tru
 DISABLE_PROMPTS_ENV = os.getenv("DISABLE_PROMPTS", "false").lower() in ("true", "1", "yes")
 
 
-def _get_transport_security_settings() -> TransportSecuritySettings | None:
+# Default allowed hosts/origins for Docker environments
+# These are added automatically so Docker users don't need extra configuration
+DEFAULT_ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "host.docker.internal",  # Docker Desktop (Mac/Windows) host access
+]
+DEFAULT_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://host.docker.internal:8000",  # Docker Desktop (Mac/Windows) host access
+]
+
+
+def _get_transport_security_settings() -> TransportSecuritySettings:
     """Read transport security settings from environment variables.
 
     MCP 1.24+ enables DNS rebinding protection by default. This function reads
     FASTMCP_TRANSPORT_SECURITY__ALLOWED_HOSTS and FASTMCP_TRANSPORT_SECURITY__ALLOWED_ORIGINS
     environment variables to configure allowed hosts and origins.
 
+    Default hosts include localhost, 127.0.0.1, and host.docker.internal for Docker support.
+
     Returns:
-        TransportSecuritySettings if env vars are set, None otherwise (uses MCP defaults)
+        TransportSecuritySettings with configured or default allowed hosts/origins
     """
     allowed_hosts_env = os.getenv("FASTMCP_TRANSPORT_SECURITY__ALLOWED_HOSTS")
     allowed_origins_env = os.getenv("FASTMCP_TRANSPORT_SECURITY__ALLOWED_ORIGINS")
 
-    # If neither env var is set, return None to use MCP defaults
-    if not allowed_hosts_env and not allowed_origins_env:
-        return None
+    # Start with defaults for Docker support
+    allowed_hosts = DEFAULT_ALLOWED_HOSTS.copy()
+    allowed_origins = DEFAULT_ALLOWED_ORIGINS.copy()
 
-    # Parse JSON arrays from environment variables
-    allowed_hosts = []
-    allowed_origins = []
-
+    # Add custom hosts from environment variable
     if allowed_hosts_env:
         try:
-            allowed_hosts = json.loads(allowed_hosts_env)
+            custom_hosts = json.loads(allowed_hosts_env)
         except json.JSONDecodeError:
             # Fallback: treat as comma-separated string
-            allowed_hosts = [h.strip() for h in allowed_hosts_env.split(",") if h.strip()]
+            custom_hosts = [h.strip() for h in allowed_hosts_env.split(",") if h.strip()]
+        # Merge with defaults (avoid duplicates)
+        allowed_hosts = list(set(allowed_hosts + custom_hosts))
 
+    # Add custom origins from environment variable
     if allowed_origins_env:
         try:
-            allowed_origins = json.loads(allowed_origins_env)
+            custom_origins = json.loads(allowed_origins_env)
         except json.JSONDecodeError:
             # Fallback: treat as comma-separated string
-            allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+            custom_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+        # Merge with defaults (avoid duplicates)
+        allowed_origins = list(set(allowed_origins + custom_origins))
 
     return TransportSecuritySettings(
         enable_dns_rebinding_protection=True,
