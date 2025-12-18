@@ -13,6 +13,23 @@ Complete configuration reference for Scraper MCP.
 | `PORT` | 8000 | Port to bind to |
 | `CACHE_DIR` | /app/cache | Cache directory path |
 | `ENABLE_CACHE_TOOLS` | false | Expose cache management tools |
+| `DISABLE_RESOURCES` | false | Disable MCP resources |
+| `DISABLE_PROMPTS` | false | Disable MCP prompts |
+
+### Feature Flags
+
+Resources and prompts are enabled by default. To reduce context overhead for LLM clients:
+
+```bash
+# Via environment variables
+DISABLE_RESOURCES=true
+DISABLE_PROMPTS=true
+
+# Via CLI flags
+python -m scraper_mcp --disable-resources
+python -m scraper_mcp --disable-prompts
+python -m scraper_mcp --disable-resources --disable-prompts
+```
 
 ### Perplexity AI
 

@@ -28,6 +28,11 @@ from scraper_mcp.tools.router import (
 # Set ENABLE_CACHE_TOOLS=true to expose cache_stats, cache_clear_expired, and cache_clear_all
 ENABLE_CACHE_TOOLS = os.getenv("ENABLE_CACHE_TOOLS", "false").lower() in ("true", "1", "yes")
 
+# Configuration: Disable resources/prompts via environment variables
+# Set DISABLE_RESOURCES=true or DISABLE_PROMPTS=true to reduce context overhead
+DISABLE_RESOURCES_ENV = os.getenv("DISABLE_RESOURCES", "false").lower() in ("true", "1", "yes")
+DISABLE_PROMPTS_ENV = os.getenv("DISABLE_PROMPTS", "false").lower() in ("true", "1", "yes")
+
 
 def _get_transport_security_settings() -> TransportSecuritySettings | None:
     """Read transport security settings from environment variables.
@@ -70,6 +75,7 @@ def _get_transport_security_settings() -> TransportSecuritySettings | None:
         allowed_origins=allowed_origins,
     )
 
+
 # Create MCP server with stateless mode enabled
 # Stateless mode auto-creates sessions for unknown session IDs, making the server
 # resilient to restarts and eliminating "No valid session ID" errors
@@ -78,7 +84,9 @@ mcp = FastMCP(
     instructions=(
         "A web scraping MCP server that provides efficient webpage scraping tools. "
         "Supports scraping HTML content, converting to markdown, extracting text, "
-        "and extracting links from webpages."
+        "and extracting links from webpages. Also includes resources for accessing "
+        "cache, configuration, and server information, plus prompts for common "
+        "analysis workflows."
     ),
     stateless_http=True,  # Accept requests without requiring initialize handshake
     transport_security=_get_transport_security_settings(),  # DNS rebinding protection config
@@ -109,14 +117,32 @@ mcp.custom_route("/api/requests/{request_id}/details", methods=["GET"])(api_requ
 mcp.custom_route("/", methods=["GET"])(dashboard_view)
 
 
-def run_server(transport: str = "streamable-http", host: str = "0.0.0.0", port: int = 8000) -> None:
+def run_server(
+    transport: str = "streamable-http",
+    host: str = "0.0.0.0",
+    port: int = 8000,
+    enable_resources: bool = True,
+    enable_prompts: bool = True,
+) -> None:
     """Run the MCP server.
 
     Args:
         transport: Transport type ('streamable-http' or 'sse')
         host: Host to bind to (default: 0.0.0.0)
         port: Port to bind to (default: 8000)
+        enable_resources: Enable MCP resources (default: True)
+        enable_prompts: Enable MCP prompts (default: True)
     """
+    # Register resources if enabled (CLI flag takes precedence over env var)
+    if enable_resources and not DISABLE_RESOURCES_ENV:
+        from scraper_mcp.resources import register_resources
+        register_resources(mcp)
+
+    # Register prompts if enabled (CLI flag takes precedence over env var)
+    if enable_prompts and not DISABLE_PROMPTS_ENV:
+        from scraper_mcp.prompts import register_prompts
+        register_prompts(mcp)
+
     # Configure host and port via settings
     mcp.settings.host = host
     mcp.settings.port = port

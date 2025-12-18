@@ -242,3 +242,82 @@ Batch operations:
 - Execute concurrently (default: 5 parallel requests)
 - Return results for all URLs with individual success/failure status
 - Include totals: `total`, `successful`, `failed`
+
+---
+
+## Resources
+
+MCP resources provide read-only data access via URI-based addressing. Access resources via `resources/list` and `resources/read`.
+
+### Cache Resources
+
+| URI | Description |
+|-----|-------------|
+| `cache://stats` | Cache statistics (hit rate, size, entries) |
+| `cache://requests` | List of recent request IDs with metadata |
+| `cache://request/{id}` | Full cached result by request ID |
+| `cache://request/{id}/content` | Just the content from a cached request |
+| `cache://request/{id}/metadata` | Just the metadata from a cached request |
+
+### Configuration Resources
+
+| URI | Description |
+|-----|-------------|
+| `config://current` | Current runtime configuration |
+| `config://defaults` | Default configuration values |
+| `config://scraping` | Scraping settings (timeout, retries, concurrency) |
+| `config://cache` | Cache settings (TTLs, directory) |
+
+### Server Resources
+
+| URI | Description |
+|-----|-------------|
+| `server://info` | Server info (version, uptime, capabilities) |
+| `server://metrics` | Request metrics (counts, success rates) |
+| `server://tools` | List of available tools with descriptions |
+
+---
+
+## Prompts
+
+MCP prompts provide reusable, parameterized workflow templates. Access prompts via `prompts/list` and `prompts/get`.
+
+### Content Analysis Prompts
+
+| Prompt | Parameters | Purpose |
+|--------|------------|---------|
+| `analyze_webpage` | `url`, `focus` | Structured webpage analysis |
+| `summarize_content` | `url`, `length`, `style` | Generate content summaries |
+| `extract_data` | `url`, `data_type`, `selector` | Extract specific data types |
+| `compare_pages` | `urls` | Compare multiple pages |
+
+### SEO/Technical Prompts
+
+| Prompt | Parameters | Purpose |
+|--------|------------|---------|
+| `seo_audit` | `url` | Comprehensive SEO check |
+| `link_audit` | `url` | Analyze internal/external links |
+| `metadata_check` | `url` | Review meta tags and OG data |
+| `accessibility_check` | `url` | Basic accessibility analysis |
+
+### Research Prompts
+
+| Prompt | Parameters | Purpose |
+|--------|------------|---------|
+| `research_topic` | `topic`, `depth` | Multi-source research |
+| `fact_check` | `claim`, `sources` | Verify claims |
+| `competitive_analysis` | `urls` | Compare competitors |
+| `news_roundup` | `topic`, `timeframe` | Gather recent news |
+
+### Disabling Resources/Prompts
+
+To reduce context overhead:
+
+```bash
+# Environment variables
+DISABLE_RESOURCES=true
+DISABLE_PROMPTS=true
+
+# CLI flags
+python -m scraper_mcp --disable-resources --disable-prompts
+```

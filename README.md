@@ -53,8 +53,8 @@ See [Dashboard Guide](docs/DASHBOARD.md) for details.
 
 | Tool | Description |
 |------|-------------|
-| `scrape_url` | Raw HTML content |
-| `scrape_url_markdown` | HTML converted to markdown (best for LLMs) |
+| `scrape_url` | HTML converted to markdown (best for LLMs) |
+| `scrape_url_html` | Raw HTML content |
 | `scrape_url_text` | Plain text extraction |
 | `scrape_extract_links` | Extract all links with metadata |
 | `perplexity` | AI web search with citations |
@@ -64,6 +64,34 @@ All tools support:
 - Single URL or batch operations (pass array)
 - `timeout` and `max_retries` parameters
 - `css_selector` for targeted extraction
+
+## Resources
+
+MCP resources provide read-only data access via URI-based addressing:
+
+| URI | Description |
+|-----|-------------|
+| `cache://stats` | Cache hit rate, size, entry counts |
+| `cache://requests` | List of recent request IDs |
+| `cache://request/{id}` | Retrieve cached result by ID |
+| `config://current` | Current runtime configuration |
+| `config://scraping` | Timeout, retries, concurrency |
+| `server://info` | Version, uptime, capabilities |
+| `server://metrics` | Request counts, success rates |
+
+## Prompts
+
+MCP prompts provide reusable workflow templates:
+
+| Prompt | Description |
+|--------|-------------|
+| `analyze_webpage` | Structured webpage analysis |
+| `summarize_content` | Generate content summaries |
+| `extract_data` | Extract specific data types |
+| `seo_audit` | Comprehensive SEO check |
+| `link_audit` | Analyze internal/external links |
+| `research_topic` | Multi-source research |
+| `fact_check` | Verify claims across sources |
 
 See [API Reference](docs/API.md) for complete documentation.
 
