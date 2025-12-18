@@ -81,9 +81,17 @@ Track server health, request statistics, retry metrics, and cache performance at
 - **Cache Metrics**: Entry count, size, hit rate with one-click cache clearing
 - **Recent Requests**: Last 100 requests with timestamps, status codes, and response times
 - **Recent Errors**: Last 10 failures with detailed error messages and attempt counts
-- **Request Details Modal**: Click any request to view full details including cached content, Perplexity responses, citations, and token usage
 - **AI Badge**: Perplexity requests are marked with an "AI" badge for easy identification
 - Auto-refreshes every 10 seconds for real-time monitoring
+
+#### Request Details Modal
+Click any request row to view full details:
+
+![Request Details](docs/4-request-details.png)
+
+- **Perplexity Requests**: View model, prompt, response content, citations, and token usage
+- **Scraper Requests**: View cached content, retry info, and response metadata
+- **Raw JSON**: Switch to raw view for debugging or copying complete response data
 
 ### Interactive API Playground
 Test all scraping and AI tools without writing code:
@@ -788,4 +796,4 @@ This project is licensed under the MIT License.
 
 ---
 
-_Last updated: December 16, 2025_
+_Last updated: December 18, 2025_
