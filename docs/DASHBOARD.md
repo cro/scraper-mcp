@@ -80,9 +80,11 @@ Switch to the "Raw JSON" tab to see the complete unformatted response for debugg
 
 ## Playground Tab
 
-![Playground](2-playground.png)
+![Playground - Web Scraping](2-playground.png)
 
 Test scraping and AI tools interactively without writing code.
+
+![Playground - Perplexity AI](5-playground-perplexity.png)
 
 ### Web Scraping Tools
 

@@ -96,7 +96,13 @@ Click any request row to view full details:
 ### Interactive API Playground
 Test all scraping and AI tools without writing code:
 
-![Playground](docs/2-playground.png)
+![Playground - Web Scraping](docs/2-playground.png)
+
+**Web Scraping Tools**: URL input, timeout, max retries, CSS selector filtering
+
+![Playground - Perplexity AI](docs/5-playground-perplexity.png)
+
+**Perplexity AI Tools**: Query input with temperature control for AI-powered web search
 
 - Test all six tools: `scrape_url`, `scrape_url_html`, `scrape_url_text`, `scrape_extract_links`, `perplexity`, `perplexity_reason`
 - Configure parameters: URL/query, timeout, max retries, CSS selectors, temperature
