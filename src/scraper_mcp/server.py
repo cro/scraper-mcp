@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import os
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 from scraper_mcp.admin.router import (
     api_cache_clear,
@@ -26,6 +28,48 @@ from scraper_mcp.tools.router import (
 # Set ENABLE_CACHE_TOOLS=true to expose cache_stats, cache_clear_expired, and cache_clear_all
 ENABLE_CACHE_TOOLS = os.getenv("ENABLE_CACHE_TOOLS", "false").lower() in ("true", "1", "yes")
 
+
+def _get_transport_security_settings() -> TransportSecuritySettings | None:
+    """Read transport security settings from environment variables.
+
+    MCP 1.24+ enables DNS rebinding protection by default. This function reads
+    FASTMCP_TRANSPORT_SECURITY__ALLOWED_HOSTS and FASTMCP_TRANSPORT_SECURITY__ALLOWED_ORIGINS
+    environment variables to configure allowed hosts and origins.
+
+    Returns:
+        TransportSecuritySettings if env vars are set, None otherwise (uses MCP defaults)
+    """
+    allowed_hosts_env = os.getenv("FASTMCP_TRANSPORT_SECURITY__ALLOWED_HOSTS")
+    allowed_origins_env = os.getenv("FASTMCP_TRANSPORT_SECURITY__ALLOWED_ORIGINS")
+
+    # If neither env var is set, return None to use MCP defaults
+    if not allowed_hosts_env and not allowed_origins_env:
+        return None
+
+    # Parse JSON arrays from environment variables
+    allowed_hosts = []
+    allowed_origins = []
+
+    if allowed_hosts_env:
+        try:
+            allowed_hosts = json.loads(allowed_hosts_env)
+        except json.JSONDecodeError:
+            # Fallback: treat as comma-separated string
+            allowed_hosts = [h.strip() for h in allowed_hosts_env.split(",") if h.strip()]
+
+    if allowed_origins_env:
+        try:
+            allowed_origins = json.loads(allowed_origins_env)
+        except json.JSONDecodeError:
+            # Fallback: treat as comma-separated string
+            allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+
+    return TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=allowed_hosts,
+        allowed_origins=allowed_origins,
+    )
+
 # Create MCP server with stateless mode enabled
 # Stateless mode auto-creates sessions for unknown session IDs, making the server
 # resilient to restarts and eliminating "No valid session ID" errors
@@ -37,6 +81,7 @@ mcp = FastMCP(
         "and extracting links from webpages."
     ),
     stateless_http=True,  # Accept requests without requiring initialize handshake
+    transport_security=_get_transport_security_settings(),  # DNS rebinding protection config
 )
 
 

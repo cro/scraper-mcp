@@ -41,6 +41,10 @@ services:
       - SCRAPEOPS_COUNTRY=${SCRAPEOPS_COUNTRY:-}
       - SCRAPEOPS_KEEP_HEADERS=${SCRAPEOPS_KEEP_HEADERS:-false}
       - SCRAPEOPS_DEVICE=${SCRAPEOPS_DEVICE:-desktop}
+      # DNS rebinding protection - add additional allowed hosts/origins if needed
+      # Default: localhost only. Add your custom domains for external access
+      - FASTMCP_TRANSPORT_SECURITY__ALLOWED_HOSTS=${FASTMCP_ALLOWED_HOSTS:-["127.0.0.1:*","localhost:*","[::1]:*"]}
+      - FASTMCP_TRANSPORT_SECURITY__ALLOWED_ORIGINS=${FASTMCP_ALLOWED_ORIGINS:-["http://127.0.0.1:*","http://localhost:*","http://[::1]:*"]}
     volumes:
       # Persistent cache volume (~1GB target)
       - cache_data:/app/cache
