@@ -576,6 +576,136 @@
             border: 1px solid #fcd34d;
             color: #92400e;
         }
+        /* Master-detail layout */
+        .master-detail {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 0.75rem;
+            min-height: 500px;
+        }
+        @media (max-width: 900px) {
+            .master-detail {
+                grid-template-columns: 1fr;
+            }
+        }
+        .master-panel .card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .detail-panel {
+            display: flex;
+            flex-direction: column;
+        }
+        .detail-panel .card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-subtitle {
+            color: #737373;
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+        }
+        .item-list {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 450px;
+        }
+        .item-card {
+            padding: 0.75rem;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .item-card:hover {
+            border-color: #d4d4d4;
+            background: #fafafa;
+        }
+        .item-card.selected {
+            border-color: #1a1a1a;
+            background: #f5f5f5;
+        }
+        .item-card-uri {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.75rem;
+            color: #1a1a1a;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        .item-card-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 0.25rem;
+        }
+        .item-card-desc {
+            font-size: 0.75rem;
+            color: #737373;
+            line-height: 1.4;
+        }
+        .item-card-params {
+            display: flex;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+            margin-top: 0.35rem;
+        }
+        .param-tag {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            background: #f5f5f5;
+            border-radius: 3px;
+            color: #525252;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+        .param-tag.required {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .category-header {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #a3a3a3;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.5rem 0 0.35rem 0;
+            border-bottom: 1px solid #f5f5f5;
+            margin-bottom: 0.5rem;
+        }
+        .placeholder-text {
+            color: #a3a3a3;
+            font-size: 0.875rem;
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+        .uri-badge {
+            display: inline-block;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.75rem;
+            padding: 0.35rem 0.6rem;
+            background: #f5f5f5;
+            border-radius: 4px;
+            color: #525252;
+        }
+        .detail-header {
+            margin-bottom: 0.75rem;
+        }
+        .content-pre {
+            flex: 1;
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            overflow: auto;
+            max-height: 400px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #1a1a1a;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -891,45 +1021,30 @@
 
     <!-- Resources Tab -->
     <div id="resources-tab" class="tab-content">
-        <div class="grid">
-            <div class="card" style="grid-column: span 2;">
-                <h2>MCP Resources</h2>
-                <p style="color: #94a3b8; margin-bottom: 1rem;">Read-only data endpoints available via URI-based addressing.</p>
-
-                <div id="resources-loading" class="loading">Loading resources...</div>
-                <div id="resources-empty" class="alert alert-warning" style="display: none;">
-                    No resources available. Resources may be disabled via DISABLE_RESOURCES environment variable.
-                </div>
-
-                <div id="resources-list" style="display: none;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>URI</th>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="resources-table-body">
-                        </tbody>
-                    </table>
+        <div class="master-detail">
+            <div class="master-panel">
+                <div class="card">
+                    <h2>MCP Resources</h2>
+                    <p class="panel-subtitle">Read-only data endpoints</p>
+                    <div id="resources-loading" class="loading">Loading...</div>
+                    <div id="resources-empty" class="alert alert-warning" style="display: none;">
+                        No resources available.
+                    </div>
+                    <div id="resources-list" class="item-list"></div>
                 </div>
             </div>
-        </div>
-
-        <div class="grid" style="margin-top: 1.5rem;">
-            <div class="card" style="grid-column: span 2;">
-                <h2>Resource Content</h2>
-                <div id="resource-content-placeholder" style="color: #64748b; font-style: italic;">
-                    Select a resource from the list above to view its content.
-                </div>
-                <div id="resource-content-display" style="display: none;">
-                    <div style="margin-bottom: 0.75rem;">
-                        <span class="stat-label">URI:</span>
-                        <code id="resource-uri-display" style="background: #1e293b; padding: 0.25rem 0.5rem; border-radius: 4px; margin-left: 0.5rem;"></code>
+            <div class="detail-panel">
+                <div class="card">
+                    <h2>Resource Content</h2>
+                    <div id="resource-content-placeholder" class="placeholder-text">
+                        Select a resource to view its content
                     </div>
-                    <pre id="resource-content" style="background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; max-height: 500px; white-space: pre-wrap;"></pre>
+                    <div id="resource-content-display" style="display: none;">
+                        <div class="detail-header">
+                            <code id="resource-uri-display" class="uri-badge"></code>
+                        </div>
+                        <pre id="resource-content" class="content-pre"></pre>
+                    </div>
                 </div>
             </div>
         </div>
@@ -937,53 +1052,38 @@
 
     <!-- Prompts Tab -->
     <div id="prompts-tab" class="tab-content">
-        <div class="grid">
-            <div class="card" style="grid-column: span 2;">
-                <h2>MCP Prompts</h2>
-                <p style="color: #94a3b8; margin-bottom: 1rem;">Reusable, parameterized workflow templates for common tasks.</p>
-
-                <div id="prompts-loading" class="loading">Loading prompts...</div>
-                <div id="prompts-empty" class="alert alert-warning" style="display: none;">
-                    No prompts available. Prompts may be disabled via DISABLE_PROMPTS environment variable.
-                </div>
-
-                <div id="prompts-list" style="display: none;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Parameters</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="prompts-table-body">
-                        </tbody>
-                    </table>
+        <div class="master-detail">
+            <div class="master-panel">
+                <div class="card">
+                    <h2>MCP Prompts</h2>
+                    <p class="panel-subtitle">Workflow templates</p>
+                    <div id="prompts-loading" class="loading">Loading...</div>
+                    <div id="prompts-empty" class="alert alert-warning" style="display: none;">
+                        No prompts available.
+                    </div>
+                    <div id="prompts-list" class="item-list"></div>
                 </div>
             </div>
-        </div>
-
-        <div class="grid" style="margin-top: 1.5rem;">
-            <div class="card">
-                <h2>Prompt Parameters</h2>
-                <div id="prompt-params-placeholder" style="color: #64748b; font-style: italic;">
-                    Select a prompt from the list above to configure its parameters.
+            <div class="detail-panel">
+                <div class="card" style="margin-bottom: 0.75rem;">
+                    <h2>Parameters</h2>
+                    <div id="prompt-params-placeholder" class="placeholder-text">
+                        Select a prompt to configure
+                    </div>
+                    <form id="prompt-params-form" style="display: none;">
+                        <div id="prompt-params-fields"></div>
+                        <button type="submit" class="btn">Generate Prompt</button>
+                    </form>
                 </div>
-                <form id="prompt-params-form" style="display: none;">
-                    <div id="prompt-params-fields"></div>
-                    <button type="submit" class="btn" style="margin-top: 1rem;">Generate Prompt</button>
-                </form>
-            </div>
-
-            <div class="card">
-                <h2>Generated Prompt</h2>
-                <div id="prompt-output-placeholder" style="color: #64748b; font-style: italic;">
-                    Configure parameters and click "Generate Prompt" to see the output.
-                </div>
-                <div id="prompt-output-display" style="display: none;">
-                    <pre id="prompt-output" style="background: #0f172a; padding: 1rem; border-radius: 8px; overflow-x: auto; max-height: 500px; white-space: pre-wrap;"></pre>
-                    <button class="btn" style="margin-top: 0.75rem;" onclick="copyPromptOutput()">Copy to Clipboard</button>
+                <div class="card">
+                    <h2>Generated Output</h2>
+                    <div id="prompt-output-placeholder" class="placeholder-text">
+                        Output will appear here
+                    </div>
+                    <div id="prompt-output-display" style="display: none;">
+                        <pre id="prompt-output" class="content-pre"></pre>
+                        <button class="btn" onclick="copyPromptOutput()">Copy to Clipboard</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1243,19 +1343,44 @@
             document.getElementById('resources-loading').style.display = 'none';
             document.getElementById('resources-list').style.display = 'block';
 
-            const tbody = document.getElementById('resources-table-body');
-            tbody.innerHTML = '';
+            const container = document.getElementById('resources-list');
+            container.innerHTML = '';
 
+            // Group by URI prefix
+            const groups = {};
             resources.forEach(resource => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><code style="font-size: 0.85em;">${escapeHtml(resource.uri)}</code></td>
-                    <td>${escapeHtml(resource.name || '-')}</td>
-                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(resource.description || '-')}</td>
-                    <td><button class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.85em;" onclick="readResource('${escapeHtml(resource.uri)}')">Read</button></td>
-                `;
-                tbody.appendChild(tr);
+                const prefix = resource.uri.split('://')[0];
+                if (!groups[prefix]) groups[prefix] = [];
+                groups[prefix].push(resource);
             });
+
+            // Render grouped items
+            Object.keys(groups).sort().forEach(prefix => {
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                header.textContent = prefix + '://';
+                container.appendChild(header);
+
+                groups[prefix].forEach(resource => {
+                    const card = document.createElement('div');
+                    card.className = 'item-card';
+                    card.dataset.uri = resource.uri;
+                    const shortDesc = (resource.description || '').split('.')[0];
+                    card.innerHTML = `
+                        <div class="item-card-uri">${escapeHtml(resource.uri)}</div>
+                        <div class="item-card-desc">${escapeHtml(shortDesc)}</div>
+                    `;
+                    card.onclick = () => selectResource(resource.uri);
+                    container.appendChild(card);
+                });
+            });
+        }
+
+        function selectResource(uri) {
+            document.querySelectorAll('#resources-list .item-card').forEach(c => c.classList.remove('selected'));
+            const card = document.querySelector(`#resources-list .item-card[data-uri="${uri}"]`);
+            if (card) card.classList.add('selected');
+            readResource(uri);
         }
 
         async function readResource(uri) {
@@ -1355,22 +1480,49 @@
             document.getElementById('prompts-loading').style.display = 'none';
             document.getElementById('prompts-list').style.display = 'block';
 
-            const tbody = document.getElementById('prompts-table-body');
-            tbody.innerHTML = '';
+            const container = document.getElementById('prompts-list');
+            container.innerHTML = '';
 
-            prompts.forEach(prompt => {
-                const args = prompt.arguments || [];
-                const argList = args.map(a => a.required ? a.name : `[${a.name}]`).join(', ');
+            // Categorize prompts
+            const categories = {
+                'Analysis': ['analyze_webpage', 'summarize_content', 'extract_data', 'compare_pages'],
+                'SEO & Audit': ['seo_audit', 'link_audit', 'metadata_check', 'accessibility_check'],
+                'Research': ['research_topic', 'fact_check', 'competitive_analysis', 'news_roundup']
+            };
 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><code style="font-size: 0.85em;">${escapeHtml(prompt.name)}</code></td>
-                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(prompt.description || '-')}</td>
-                    <td><code style="font-size: 0.8em; color: #94a3b8;">${escapeHtml(argList) || 'none'}</code></td>
-                    <td><button class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.85em;" onclick="selectPrompt('${escapeHtml(prompt.name)}')">Select</button></td>
-                `;
-                tbody.appendChild(tr);
+            Object.keys(categories).forEach(cat => {
+                const catPrompts = prompts.filter(p => categories[cat].includes(p.name));
+                if (catPrompts.length === 0) return;
+
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                header.textContent = cat;
+                container.appendChild(header);
+
+                catPrompts.forEach(prompt => {
+                    const args = prompt.arguments || [];
+                    const card = document.createElement('div');
+                    card.className = 'item-card';
+                    card.dataset.name = prompt.name;
+                    const shortDesc = (prompt.description || '').split('.')[0].replace(/^[^:]+:\s*/, '');
+                    card.innerHTML = `
+                        <div class="item-card-name">${escapeHtml(prompt.name)}</div>
+                        <div class="item-card-desc">${escapeHtml(shortDesc)}</div>
+                        <div class="item-card-params">
+                            ${args.map(a => `<span class="param-tag ${a.required ? 'required' : ''}">${a.name}</span>`).join('')}
+                        </div>
+                    `;
+                    card.onclick = () => selectPromptCard(prompt.name);
+                    container.appendChild(card);
+                });
             });
+        }
+
+        function selectPromptCard(promptName) {
+            document.querySelectorAll('#prompts-list .item-card').forEach(c => c.classList.remove('selected'));
+            const card = document.querySelector(`#prompts-list .item-card[data-name="${promptName}"]`);
+            if (card) card.classList.add('selected');
+            selectPrompt(promptName);
         }
 
         function selectPrompt(promptName) {
@@ -1385,24 +1537,23 @@
             document.getElementById('prompt-output-display').style.display = 'none';
 
             const fieldsContainer = document.getElementById('prompt-params-fields');
-            fieldsContainer.innerHTML = `<h3 style="margin-bottom: 1rem; color: #e2e8f0;">${escapeHtml(prompt.name)}</h3>`;
+            fieldsContainer.innerHTML = `<div class="item-card-name" style="margin-bottom: 0.75rem;">${escapeHtml(prompt.name)}</div>`;
 
             const args = prompt.arguments || [];
             if (args.length === 0) {
-                fieldsContainer.innerHTML += '<p style="color: #94a3b8;">This prompt has no parameters.</p>';
+                fieldsContainer.innerHTML += '<p class="placeholder-text" style="padding: 0.5rem;">No parameters required</p>';
             } else {
                 args.forEach(arg => {
                     const fieldHtml = `
                         <div class="form-group">
-                            <label for="prompt-arg-${arg.name}">
-                                ${escapeHtml(arg.name)}${arg.required ? ' <span style="color: #f87171;">*</span>' : ''}
+                            <label class="form-label" for="prompt-arg-${arg.name}">
+                                ${escapeHtml(arg.name)}${arg.required ? ' *' : ''}
                             </label>
-                            <input type="text"
+                            <input type="text" class="form-input"
                                    id="prompt-arg-${arg.name}"
                                    name="${escapeHtml(arg.name)}"
                                    placeholder="${escapeHtml(arg.description || '')}"
                                    ${arg.required ? 'required' : ''}>
-                            ${arg.description ? `<small style="color: #64748b; display: block; margin-top: 0.25rem;">${escapeHtml(arg.description)}</small>` : ''}
                         </div>
                     `;
                     fieldsContainer.innerHTML += fieldHtml;
