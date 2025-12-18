@@ -38,8 +38,11 @@ DISABLE_PROMPTS_ENV = os.getenv("DISABLE_PROMPTS", "false").lower() in ("true", 
 # These are added automatically so Docker users don't need extra configuration
 DEFAULT_ALLOWED_HOSTS = [
     "localhost",
+    "localhost:8000",
     "127.0.0.1",
+    "127.0.0.1:8000",
     "host.docker.internal",  # Docker Desktop (Mac/Windows) host access
+    "host.docker.internal:8000",  # Host header includes port
 ]
 DEFAULT_ALLOWED_ORIGINS = [
     "http://localhost:8000",
