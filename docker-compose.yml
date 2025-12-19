@@ -14,37 +14,9 @@ services:
     container_name: scraper-mcp
     ports:
       - "8000:8000"
-    environment:
-      # Set transport type (streamable-http or sse)
-      - TRANSPORT=streamable-http
-      # Set host and port
-      - HOST=0.0.0.0
-      - PORT=8000
-      # Set cache directory
-      - CACHE_DIR=/app/cache
-      # Proxy settings for runtime requests (standard environment variables)
-      - HTTP_PROXY=${HTTP_PROXY:-}
-      - HTTPS_PROXY=${HTTPS_PROXY:-}
-      - NO_PROXY=${NO_PROXY:-}
-      - http_proxy=${http_proxy:-}
-      - https_proxy=${https_proxy:-}
-      - no_proxy=${no_proxy:-}
-      # Perplexity AI configuration (optional, enabled if API key provided)
-      - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY:-}
-      - PERPLEXITY_MODEL=${PERPLEXITY_MODEL:-sonar}
-      - PERPLEXITY_TEMPERATURE=${PERPLEXITY_TEMPERATURE:-0.3}
-      - PERPLEXITY_MAX_TOKENS=${PERPLEXITY_MAX_TOKENS:-4000}
-      # ScrapeOps proxy configuration (optional, enabled if API key provided)
-      - SCRAPEOPS_API_KEY=${SCRAPEOPS_API_KEY:-}
-      - SCRAPEOPS_RENDER_JS=${SCRAPEOPS_RENDER_JS:-false}
-      - SCRAPEOPS_RESIDENTIAL=${SCRAPEOPS_RESIDENTIAL:-false}
-      - SCRAPEOPS_COUNTRY=${SCRAPEOPS_COUNTRY:-}
-      - SCRAPEOPS_KEEP_HEADERS=${SCRAPEOPS_KEEP_HEADERS:-false}
-      - SCRAPEOPS_DEVICE=${SCRAPEOPS_DEVICE:-desktop}
-      # DNS rebinding protection - add additional allowed hosts/origins if needed
-      # Default: localhost only. Add your custom domains for external access
-      - FASTMCP_TRANSPORT_SECURITY__ALLOWED_HOSTS=${FASTMCP_ALLOWED_HOSTS:-["127.0.0.1:*","localhost:*","[::1]:*"]}
-      - FASTMCP_TRANSPORT_SECURITY__ALLOWED_ORIGINS=${FASTMCP_ALLOWED_ORIGINS:-["http://127.0.0.1:*","http://localhost:*","http://[::1]:*"]}
+    env_file:
+      - .env
+    environment: {}
     volumes:
       # Persistent cache volume (~1GB target)
       - cache_data:/app/cache
