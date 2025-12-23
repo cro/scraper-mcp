@@ -706,6 +706,106 @@
             color: #1a1a1a;
             margin: 0;
         }
+        /* Playground layout */
+        .playground-layout {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 768px) {
+            .playground-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .playground-input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .playground-options-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #e5e5e5;
+        }
+        .playground-settings-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .playground-btn {
+            margin-top: 0;
+        }
+        /* Toggle switch for JS rendering */
+        .js-render-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            margin-top: 0.25rem;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #d4d4d4;
+            transition: 0.2s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.2s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #22c55e;
+        }
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+        .toggle-label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+        .toggle-title {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+        .toggle-desc {
+            font-size: 0.7rem;
+            color: #737373;
+        }
     </style>
 </head>
 <body>
@@ -863,62 +963,73 @@
             <div class="card">
                 <h2>API Playground</h2>
                 <form id="playground-form">
-                    <div class="form-group" id="url-input-group">
-                        <label class="form-label" for="test-url">URL</label>
-                        <input type="text" id="test-url" class="form-input" placeholder="https://example.com" required>
-                        <small class="form-help">Enter a URL to scrape</small>
+                    <div class="playground-layout">
+                        <!-- Left column: Input and options -->
+                        <div class="playground-input-section">
+                            <div class="form-group" id="url-input-group">
+                                <label class="form-label" for="test-url">URL</label>
+                                <input type="text" id="test-url" class="form-input" placeholder="https://example.com" required>
+                            </div>
+
+                            <div class="form-group" id="query-input-group" style="display: none;">
+                                <label class="form-label" for="test-query">Query</label>
+                                <textarea id="test-query" class="form-input" rows="3" placeholder="What is the current state of AI in 2025?"></textarea>
+                            </div>
+
+                            <div class="form-group scraper-options">
+                                <label class="form-label" for="test-selector">CSS Selector (optional)</label>
+                                <input type="text" id="test-selector" class="form-input" placeholder=".article-content, #main, article">
+                            </div>
+                        </div>
+
+                        <!-- Right column: Tool selection and settings -->
+                        <div class="playground-options-section">
+                            <div class="form-group">
+                                <label class="form-label" for="test-tool">Tool</label>
+                                <select id="test-tool" class="form-input" onchange="toggleToolInputs()">
+                                    <optgroup label="Web Scraping">
+                                        <option value="scrape_url" selected>scrape_url (Markdown)</option>
+                                        <option value="scrape_url_html">scrape_url_html (Raw HTML)</option>
+                                        <option value="scrape_url_text">scrape_url_text (Plain Text)</option>
+                                        <option value="scrape_extract_links">scrape_extract_links (Links)</option>
+                                    </optgroup>
+                                    <optgroup label="Perplexity AI">
+                                        <option value="perplexity">perplexity (Web Search)</option>
+                                        <option value="perplexity_reason">perplexity_reason (Reasoning)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+
+                            <div class="playground-settings-row scraper-options">
+                                <div class="form-group">
+                                    <label class="form-label" for="test-timeout">Timeout</label>
+                                    <input type="number" id="test-timeout" class="form-input" min="1" value="30">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="test-retries">Retries</label>
+                                    <input type="number" id="test-retries" class="form-input" min="0" value="3">
+                                </div>
+                            </div>
+
+                            <div class="form-group perplexity-options" style="display: none;">
+                                <label class="form-label" for="test-temperature">Temperature</label>
+                                <input type="number" id="test-temperature" class="form-input" min="0" max="2" step="0.1" value="0.3">
+                            </div>
+
+                            <div class="js-render-toggle scraper-options">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="test-render-js">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <div class="toggle-label">
+                                    <span class="toggle-title">JavaScript Rendering</span>
+                                    <span class="toggle-desc">Playwright for SPAs & dynamic content</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-group" id="query-input-group" style="display: none;">
-                        <label class="form-label" for="test-query">Query</label>
-                        <textarea id="test-query" class="form-input" rows="3" placeholder="What is the current state of AI in 2025?"></textarea>
-                        <small class="form-help">Enter your question or topic to search</small>
-                    </div>
-
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label" for="test-tool">Tool</label>
-                            <select id="test-tool" class="form-input" onchange="toggleToolInputs()">
-                                <optgroup label="Web Scraping">
-                                    <option value="scrape_url" selected>scrape_url (Markdown)</option>
-                                    <option value="scrape_url_html">scrape_url_html (Raw HTML)</option>
-                                    <option value="scrape_url_text">scrape_url_text (Plain Text)</option>
-                                    <option value="scrape_extract_links">scrape_extract_links (Links)</option>
-                                </optgroup>
-                                <optgroup label="Perplexity AI">
-                                    <option value="perplexity">perplexity (Web Search)</option>
-                                    <option value="perplexity_reason">perplexity_reason (Reasoning)</option>
-                                </optgroup>
-                            </select>
-                            <small class="form-help">Select tool to test</small>
-                        </div>
-
-                        <div class="form-group scraper-options">
-                            <label class="form-label" for="test-timeout">Timeout (seconds)</label>
-                            <input type="number" id="test-timeout" class="form-input" min="1" value="30">
-                            <small class="form-help">Request timeout</small>
-                        </div>
-
-                        <div class="form-group scraper-options">
-                            <label class="form-label" for="test-retries">Max Retries</label>
-                            <input type="number" id="test-retries" class="form-input" min="0" value="3">
-                            <small class="form-help">Max retry attempts</small>
-                        </div>
-
-                        <div class="form-group scraper-options">
-                            <label class="form-label" for="test-selector">CSS Selector (optional)</label>
-                            <input type="text" id="test-selector" class="form-input" placeholder=".article-content">
-                            <small class="form-help">Filter HTML elements</small>
-                        </div>
-
-                        <div class="form-group perplexity-options" style="display: none;">
-                            <label class="form-label" for="test-temperature">Temperature</label>
-                            <input type="number" id="test-temperature" class="form-input" min="0" max="2" step="0.1" value="0.3">
-                            <small class="form-help">Creativity (0-2, lower = focused)</small>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn">Run Tool</button>
+                    <button type="submit" class="btn playground-btn">Run Tool</button>
                 </form>
             </div>
 
@@ -1800,6 +1911,7 @@
                     const timeout = parseInt(document.getElementById('test-timeout').value);
                     const maxRetries = parseInt(document.getElementById('test-retries').value);
                     const cssSelector = document.getElementById('test-selector').value;
+                    const renderJs = document.getElementById('test-render-js').checked;
 
                     payload = {
                         jsonrpc: "2.0",
@@ -1810,7 +1922,8 @@
                             arguments: {
                                 urls: [url],
                                 timeout: timeout,
-                                max_retries: maxRetries
+                                max_retries: maxRetries,
+                                render_js: renderJs
                             }
                         }
                     };

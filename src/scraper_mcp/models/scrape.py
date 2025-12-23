@@ -21,9 +21,7 @@ class ScrapeResultItem(BaseModel):
 
     url: str = Field(description="The URL that was requested")
     success: bool = Field(description="Whether the scrape was successful")
-    data: ScrapeResponse | None = Field(
-        default=None, description="Scrape data if successful"
-    )
+    data: ScrapeResponse | None = Field(default=None, description="Scrape data if successful")
     error: str | None = Field(default=None, description="Error message if failed")
 
 

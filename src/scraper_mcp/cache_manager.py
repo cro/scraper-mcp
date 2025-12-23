@@ -69,9 +69,7 @@ class CacheManager:
                 statistics=enable_statistics,
                 cull_limit=10,  # Remove up to 10 items when size limit reached
             )
-            logger.info(
-                f"Cache initialized at {cache_dir} with {size_limit / 1e9:.1f}GB limit"
-            )
+            logger.info(f"Cache initialized at {cache_dir} with {size_limit / 1e9:.1f}GB limit")
         except Exception as e:
             logger.error(f"Failed to initialize cache: {e}")
             raise
@@ -95,9 +93,7 @@ class CacheManager:
             # Fallback to local .cache directory for development/testing
             cache_path = Path.cwd() / ".cache"
             cache_path.mkdir(parents=True, exist_ok=True)
-            logger.info(
-                f"Could not create cache at {cache_dir}, using fallback: {cache_path}"
-            )
+            logger.info(f"Could not create cache at {cache_dir}, using fallback: {cache_path}")
 
         return cache_path
 
@@ -133,11 +129,11 @@ class CacheManager:
         url_lower = url.lower()
 
         # Static assets and CDN content
-        if any(pattern in url_lower for pattern in ['static', 'cdn', 'cloudfront']):
+        if any(pattern in url_lower for pattern in ["static", "cdn", "cloudfront"]):
             return STATIC_ASSET_TTL
 
         # Real-time or API data
-        if any(pattern in url_lower for pattern in ['api', 'realtime', 'live']):
+        if any(pattern in url_lower for pattern in ["api", "realtime", "live"]):
             return REALTIME_DATA_TTL
 
         # Default TTL

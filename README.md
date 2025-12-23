@@ -2,15 +2,15 @@
 
 [![CI](https://github.com/cotdp/scraper-mcp/workflows/CI/badge.svg)](https://github.com/cotdp/scraper-mcp/actions/workflows/ci.yml)
 [![Docker](https://github.com/cotdp/scraper-mcp/workflows/Build%20and%20Push%20Docker%20Images/badge.svg)](https://github.com/cotdp/scraper-mcp/actions/workflows/docker-publish.yml)
-[![Docker Hub](https://img.shields.io/docker/v/cotdp/scraper-mcp?label=Docker%20Hub)](https://hub.docker.com/r/cotdp/scraper-mcp)
+[![GHCR](https://img.shields.io/badge/GHCR-scraper--mcp-blue?logo=github)](https://github.com/cotdp/scraper-mcp/pkgs/container/scraper-mcp)
 
 A context-optimized MCP server for web scraping. Reduces LLM token usage by 70-90% through server-side HTML filtering, markdown conversion, and CSS selector targeting.
 
 ## Quick Start
 
 ```bash
-# Run with Docker
-docker run -d -p 8000:8000 --name scraper-mcp cotdp/scraper-mcp:latest
+# Run with Docker (GitHub Container Registry)
+docker run -d -p 8000:8000 --name scraper-mcp ghcr.io/cotdp/scraper-mcp:latest
 
 # Add to Claude Code
 claude mcp add --transport http scraper http://localhost:8000/mcp --scope user
@@ -30,6 +30,7 @@ Try it:
 
 ### Web Scraping
 - **4 scraping modes**: Raw HTML, markdown, plain text, link extraction
+- **JavaScript rendering**: Optional Playwright-based rendering for SPAs and dynamic content
 - **CSS selector filtering**: Extract only relevant content server-side
 - **Batch operations**: Process multiple URLs concurrently
 - **Smart caching**: Three-tier cache system (realtime/default/static)
@@ -64,6 +65,7 @@ All tools support:
 - Single URL or batch operations (pass array)
 - `timeout` and `max_retries` parameters
 - `css_selector` for targeted extraction
+- `render_js` for JavaScript rendering (SPAs, dynamic content)
 
 ## Resources
 
@@ -95,7 +97,59 @@ MCP prompts provide reusable workflow templates:
 
 See [API Reference](docs/API.md) for complete documentation.
 
-## Docker Compose
+## JavaScript Rendering
+
+For SPAs (React, Vue, Angular) and pages with dynamic content, enable JavaScript rendering:
+
+```python
+# Enable JS rendering with render_js=True
+scrape_url(["https://spa-example.com"], render_js=True)
+
+# Combine with CSS selector for targeted extraction
+scrape_url(["https://react-app.com"], render_js=True, css_selector=".main-content")
+```
+
+**When to use `render_js=True`:**
+- Single-page applications (SPAs) - React, Vue, Angular, etc.
+- Sites with lazy-loaded content
+- Pages requiring JavaScript execution
+- Dynamic content loaded via AJAX/fetch
+
+**When NOT needed:**
+- Static HTML pages (most blogs, news sites, documentation)
+- Server-rendered content
+- Simple websites without JavaScript dependencies
+
+**How it works:**
+- Uses Playwright with headless Chromium
+- Single browser instance with pooled contexts (~300MB base + 10-20MB per context)
+- Lazy initialization (browser only starts when first JS render is requested)
+- Semaphore-controlled concurrency (default: 5 concurrent contexts)
+
+**Memory considerations:**
+- Base requests provider: ~50MB
+- With Playwright active: ~300-500MB depending on concurrent contexts
+- Recommend minimum 1GB container memory when using JS rendering
+
+**Testing JS rendering:**
+Use the dashboard playground at `http://localhost:8000/` to test JavaScript rendering interactively with the toggle switch.
+
+## Docker Deployment
+
+### Quick Run
+
+```bash
+# Using GitHub Container Registry (recommended)
+docker run -d -p 8000:8000 --name scraper-mcp ghcr.io/cotdp/scraper-mcp:latest
+
+# With JavaScript rendering (requires more memory)
+docker run -d -p 8000:8000 --memory=1g --name scraper-mcp ghcr.io/cotdp/scraper-mcp:latest
+
+# With Perplexity AI
+docker run -d -p 8000:8000 -e PERPLEXITY_API_KEY=your_key ghcr.io/cotdp/scraper-mcp:latest
+```
+
+### Docker Compose
 
 For persistent storage and custom configuration:
 
@@ -103,11 +157,18 @@ For persistent storage and custom configuration:
 # docker-compose.yml
 services:
   scraper-mcp:
-    image: cotdp/scraper-mcp:latest
+    image: ghcr.io/cotdp/scraper-mcp:latest
     ports:
       - "8000:8000"
     volumes:
       - cache:/app/cache
+    environment:
+      - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY:-}
+      - PLAYWRIGHT_MAX_CONTEXTS=5
+    deploy:
+      resources:
+        limits:
+          memory: 1G  # Recommended for JS rendering
     restart: unless-stopped
 
 volumes:
@@ -118,6 +179,41 @@ volumes:
 docker-compose up -d
 ```
 
+**Production deployment** (pre-built image from GHCR):
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Upgrading
+
+To upgrade an existing deployment to the latest version:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/cotdp/scraper-mcp:latest
+
+# Restart with new image (docker-compose)
+docker-compose down && docker-compose up -d
+
+# Or for production deployments
+docker-compose -f docker-compose.prod.yml pull
+docker-compose -f docker-compose.prod.yml up -d
+
+# Or restart a standalone container
+docker stop scraper-mcp && docker rm scraper-mcp
+docker run -d -p 8000:8000 --name scraper-mcp ghcr.io/cotdp/scraper-mcp:latest
+```
+
+Your cache data persists in the named volume across upgrades.
+
+### Available Tags
+
+| Tag | Description |
+|-----|-------------|
+| `latest` | Latest stable release |
+| `main` | Latest build from main branch |
+| `v0.4.0` | Specific version |
+
 ## Configuration
 
 Create a `.env` file for custom settings:
@@ -125,6 +221,11 @@ Create a `.env` file for custom settings:
 ```bash
 # Perplexity AI (optional)
 PERPLEXITY_API_KEY=your_key_here
+
+# JavaScript rendering (optional, requires Playwright)
+PLAYWRIGHT_MAX_CONTEXTS=5       # Max concurrent browser contexts
+PLAYWRIGHT_TIMEOUT=30000        # Page load timeout in ms
+PLAYWRIGHT_DISABLE_GPU=true     # Reduce memory in containers
 
 # Proxy (optional)
 HTTP_PROXY=http://proxy.example.com:8080
@@ -220,4 +321,4 @@ MIT License
 
 ---
 
-_Last updated: December 18, 2025_
+_Last updated: December 23, 2025_

@@ -143,8 +143,8 @@ def register_research_prompts(mcp: FastMCP) -> None:
 
 ## Output Format
 ### Competitor Matrix
-| Aspect | {' | '.join([f'Competitor {i+1}' for i in range(len(url_list))])} |
-|--------|{'|'.join(['---' for _ in url_list])}|
+| Aspect | {" | ".join([f"Competitor {i + 1}" for i in range(len(url_list))])} |
+|--------|{"|".join(["---" for _ in url_list])}|
 | Positioning | | |
 | Strengths | | |
 | Weaknesses | | |
@@ -172,7 +172,7 @@ def register_research_prompts(mcp: FastMCP) -> None:
             "this_week": "from this week",
             "this_month": "from this month",
         }
-        return f"""Gather {timeframe_desc.get(timeframe, 'recent')} news about: {topic}
+        return f"""Gather {timeframe_desc.get(timeframe, "recent")} news about: {topic}
 
 ## Instructions
 1. Search: `perplexity(messages=[{{"role": "user", "content": "Latest news: {topic}"}}])`

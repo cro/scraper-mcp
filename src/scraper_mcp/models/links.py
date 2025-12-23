@@ -17,9 +17,7 @@ class LinkResultItem(BaseModel):
 
     url: str = Field(description="The URL that was requested")
     success: bool = Field(description="Whether the extraction was successful")
-    data: LinksResponse | None = Field(
-        default=None, description="Link data if successful"
-    )
+    data: LinksResponse | None = Field(default=None, description="Link data if successful")
     error: str | None = Field(default=None, description="Error message if failed")
 
 

@@ -29,7 +29,10 @@ class RequestsProvider(ScraperProvider):
         timeout: int = 30,
         max_retries: int = 3,
         retry_delay: float = 1.0,
-        user_agent: str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        user_agent: str = (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+        ),
         cache_enabled: bool = True,
     ) -> None:
         """Initialize the requests provider with caching support.
@@ -56,10 +59,13 @@ class RequestsProvider(ScraperProvider):
 
         if self.scrapeops_enabled:
             # ScrapeOps configuration options with sensible defaults
-            self.scrapeops_render_js = os.getenv("SCRAPEOPS_RENDER_JS", "false").lower() in ("true", "1", "yes")
-            self.scrapeops_residential = os.getenv("SCRAPEOPS_RESIDENTIAL", "false").lower() in ("true", "1", "yes")
+            render_js_env = os.getenv("SCRAPEOPS_RENDER_JS", "false").lower()
+            self.scrapeops_render_js = render_js_env in ("true", "1", "yes")
+            residential_env = os.getenv("SCRAPEOPS_RESIDENTIAL", "false").lower()
+            self.scrapeops_residential = residential_env in ("true", "1", "yes")
             self.scrapeops_country = os.getenv("SCRAPEOPS_COUNTRY", "")
-            self.scrapeops_keep_headers = os.getenv("SCRAPEOPS_KEEP_HEADERS", "false").lower() in ("true", "1", "yes")
+            keep_headers_env = os.getenv("SCRAPEOPS_KEEP_HEADERS", "false").lower()
+            self.scrapeops_keep_headers = keep_headers_env in ("true", "1", "yes")
             self.scrapeops_device = os.getenv("SCRAPEOPS_DEVICE", "desktop")
 
             logger.info(
@@ -224,6 +230,7 @@ class RequestsProvider(ScraperProvider):
 
         # Get SSL verification setting from runtime config
         from scraper_mcp.admin.service import get_config
+
         verify_ssl = get_config("verify_ssl", True)
 
         if self.scrapeops_enabled:
@@ -262,7 +269,13 @@ class RequestsProvider(ScraperProvider):
                 loop = asyncio.get_event_loop()
                 response = await loop.run_in_executor(
                     None,
-                    lambda: self.session.get(request_url, headers=headers, timeout=timeout, proxies=proxies, verify=verify_ssl),
+                    lambda: self.session.get(
+                        request_url,
+                        headers=headers,
+                        timeout=timeout,
+                        proxies=proxies,
+                        verify=verify_ssl,
+                    ),
                 )
 
                 # Raise for bad status codes
@@ -280,7 +293,7 @@ class RequestsProvider(ScraperProvider):
                 # Add proxy metadata if used
                 if proxies:
                     metadata["proxy_used"] = True
-                    metadata["proxy_config"] = {k: v for k, v in proxies.items()}
+                    metadata["proxy_config"] = dict(proxies)
                 else:
                     metadata["proxy_used"] = False
 

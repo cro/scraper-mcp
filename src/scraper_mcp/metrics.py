@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -16,7 +16,7 @@ def utc_now() -> datetime:
     JavaScript will correctly parse ISO strings with timezone and convert
     to the user's local timezone via toLocaleString().
     """
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @dataclass
@@ -233,8 +233,15 @@ def record_request(
         The created RequestMetrics object
     """
     return _metrics.record_request(
-        url, success, status_code, elapsed_ms, attempts, error,
-        request_type, cache_key, perplexity_data
+        url,
+        success,
+        status_code,
+        elapsed_ms,
+        attempts,
+        error,
+        request_type,
+        cache_key,
+        perplexity_data,
     )
 
 

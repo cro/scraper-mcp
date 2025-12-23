@@ -12,9 +12,7 @@ class PerplexityResponse(BaseModel):
 
     content: str = Field(description="Response content from Perplexity AI")
     model: str = Field(description="Model used for the response")
-    citations: list[str] = Field(
-        default_factory=list, description="Source URLs from web search"
-    )
+    citations: list[str] = Field(default_factory=list, description="Source URLs from web search")
     usage: dict[str, int] = Field(
         default_factory=dict,
         description="Token usage: prompt_tokens, completion_tokens, total_tokens",

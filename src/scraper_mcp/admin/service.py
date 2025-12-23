@@ -45,6 +45,7 @@ if _http_proxy_env or _https_proxy_env:
 
     # Log proxy initialization
     import logging
+
     logger = logging.getLogger(__name__)
     logger.info(
         f"Proxy enabled from environment variables: "
@@ -107,7 +108,7 @@ def get_current_config() -> dict[str, Any]:
             "no_proxy": "",
             "verify_ssl": False,
         },
-        "note": "Changes are not persisted and will reset on server restart"
+        "note": "Changes are not persisted and will reset on server restart",
     }
 
 
@@ -144,7 +145,11 @@ def update_config(config_updates: dict[str, Any]) -> dict[str, Any]:
             if key == "concurrency" and isinstance(value, int) and 1 <= value <= 50:
                 _runtime_config[key] = value
                 updated.append(key)
-            elif key in ("default_timeout", "default_max_retries") and isinstance(value, int) and value > 0:
+            elif (
+                key in ("default_timeout", "default_max_retries")
+                and isinstance(value, int)
+                and value > 0
+            ):
                 _runtime_config[key] = value
                 updated.append(key)
             elif key.startswith("cache_ttl_") and isinstance(value, int) and value >= 0:
@@ -161,7 +166,7 @@ def update_config(config_updates: dict[str, Any]) -> dict[str, Any]:
         "status": "success",
         "message": f"Updated {len(updated)} config value(s)",
         "updated": updated,
-        "current_config": _runtime_config
+        "current_config": _runtime_config,
     }
 
 
@@ -172,7 +177,4 @@ def clear_cache() -> dict[str, str]:
         Dictionary with status and message
     """
     clear_all_cache()
-    return {
-        "status": "success",
-        "message": "Cache cleared successfully"
-    }
+    return {"status": "success", "message": "Cache cleared successfully"}

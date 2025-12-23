@@ -28,9 +28,7 @@ class TestPerplexityService:
         """Test is_available returns True when API key is set and SDK is available."""
         with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "test-key"}):
             # Also need to patch PERPLEXITY_AVAILABLE
-            with patch(
-                "scraper_mcp.services.perplexity_service.PERPLEXITY_AVAILABLE", True
-            ):
+            with patch("scraper_mcp.services.perplexity_service.PERPLEXITY_AVAILABLE", True):
                 from scraper_mcp.services.perplexity_service import PerplexityService
 
                 assert PerplexityService.is_available() is True
@@ -38,9 +36,7 @@ class TestPerplexityService:
     def test_is_available_without_sdk(self) -> None:
         """Test is_available returns False when SDK is not installed."""
         with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "test-key"}):
-            with patch(
-                "scraper_mcp.services.perplexity_service.PERPLEXITY_AVAILABLE", False
-            ):
+            with patch("scraper_mcp.services.perplexity_service.PERPLEXITY_AVAILABLE", False):
                 from scraper_mcp.services.perplexity_service import PerplexityService
 
                 assert PerplexityService.is_available() is False
@@ -115,9 +111,7 @@ class TestPerplexityServiceChat:
         mock_client.chat.completions.create = Mock(return_value=mock_completion)
 
         with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "test-key"}):
-            with patch(
-                "scraper_mcp.services.perplexity_service.PERPLEXITY_AVAILABLE", True
-            ):
+            with patch("scraper_mcp.services.perplexity_service.PERPLEXITY_AVAILABLE", True):
                 with patch(
                     "scraper_mcp.services.perplexity_service.Perplexity",
                     return_value=mock_client,
@@ -145,15 +139,11 @@ class TestPerplexityServiceChat:
         with patch.dict(os.environ, {}, clear=True):
             os.environ.pop("PERPLEXITY_API_KEY", None)
 
-            with patch(
-                "scraper_mcp.services.perplexity_service.PERPLEXITY_AVAILABLE", False
-            ):
+            with patch("scraper_mcp.services.perplexity_service.PERPLEXITY_AVAILABLE", False):
                 from scraper_mcp.services.perplexity_service import PerplexityService
 
                 service = PerplexityService()
-                response = await service.chat(
-                    messages=[{"role": "user", "content": "What is AI?"}]
-                )
+                response = await service.chat(messages=[{"role": "user", "content": "What is AI?"}])
 
                 assert response.content == ""
                 assert "error" in response.metadata
@@ -163,14 +153,10 @@ class TestPerplexityServiceChat:
     async def test_chat_rate_limit_error(self) -> None:
         """Test chat handles rate limit errors."""
         mock_client = Mock()
-        mock_client.chat.completions.create = Mock(
-            side_effect=Exception("Rate limit exceeded")
-        )
+        mock_client.chat.completions.create = Mock(side_effect=Exception("Rate limit exceeded"))
 
         with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "test-key"}):
-            with patch(
-                "scraper_mcp.services.perplexity_service.PERPLEXITY_AVAILABLE", True
-            ):
+            with patch("scraper_mcp.services.perplexity_service.PERPLEXITY_AVAILABLE", True):
                 with patch(
                     "scraper_mcp.services.perplexity_service.Perplexity",
                     return_value=mock_client,
@@ -199,18 +185,14 @@ class TestPerplexityServiceReason:
         mock_completion = Mock()
         mock_completion.choices = [mock_choice]
         mock_completion.citations = []
-        mock_completion.usage = Mock(
-            prompt_tokens=15, completion_tokens=25, total_tokens=40
-        )
+        mock_completion.usage = Mock(prompt_tokens=15, completion_tokens=25, total_tokens=40)
         mock_completion.id = "req_reason123"
 
         mock_client = Mock()
         mock_client.chat.completions.create = Mock(return_value=mock_completion)
 
         with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "test-key"}):
-            with patch(
-                "scraper_mcp.services.perplexity_service.PERPLEXITY_AVAILABLE", True
-            ):
+            with patch("scraper_mcp.services.perplexity_service.PERPLEXITY_AVAILABLE", True):
                 with patch(
                     "scraper_mcp.services.perplexity_service.Perplexity",
                     return_value=mock_client,
@@ -218,9 +200,7 @@ class TestPerplexityServiceReason:
                     from scraper_mcp.services.perplexity_service import PerplexityService
 
                     service = PerplexityService()
-                    response = await service.reason(
-                        query="Compare solar vs wind energy"
-                    )
+                    response = await service.reason(query="Compare solar vs wind energy")
 
                     # Verify the reasoning model was used
                     call_args = mock_client.chat.completions.create.call_args

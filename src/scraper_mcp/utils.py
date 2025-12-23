@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 from markdownify import markdownify
 
 

@@ -58,14 +58,29 @@ jobs:
     - name: Run ruff check
       run: |
         uv run ruff check src/ tests/
-      continue-on-error: true
 
     - name: Run ruff format check
       run: |
         uv run ruff format --check src/ tests/
-      continue-on-error: true
 
     - name: Run type checking
       run: |
         uv run mypy src/
-      continue-on-error: true
+      continue-on-error: true  # TODO: Fix type errors and remove this
+
+  lint-web:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Install biome
+      run: npm install
+
+    - name: Run biome check
+      run: npm run check

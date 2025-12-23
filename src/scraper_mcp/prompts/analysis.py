@@ -73,7 +73,7 @@ Provide findings in this format:
 
 ## Instructions
 1. Scrape: `scrape_url(urls=["{url}"], css_selector="article, main, .content")`
-2. Generate a {lengths.get(length, lengths['medium'])} summary
+2. Generate a {lengths.get(length, lengths["medium"])} summary
 3. Style: {style}
 
 ## Output Format
@@ -151,8 +151,8 @@ Provide findings in this format:
 
 ## Output Format
 ### Summary Table
-| Dimension | {' | '.join([f'Page {i+1}' for i in range(len(url_list))])} |
-|-----------|{'|'.join(['---' for _ in url_list])}|
+| Dimension | {" | ".join([f"Page {i + 1}" for i in range(len(url_list))])} |
+|-----------|{"|".join(["---" for _ in url_list])}|
 
 ### Key Differences
 [Bullet points]

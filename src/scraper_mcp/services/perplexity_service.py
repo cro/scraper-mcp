@@ -118,7 +118,7 @@ class PerplexityService:
         if not self._client:
             prompt = _extract_prompt(messages)
             record_request(
-                url=f"perplexity://{model or self.default_model}  \"{prompt}\"",
+                url=f'perplexity://{model or self.default_model}  "{prompt}"',
                 success=False,
                 status_code=503,
                 elapsed_ms=0,
@@ -137,7 +137,7 @@ class PerplexityService:
 
         # Extract prompt for metrics logging
         prompt = _extract_prompt(messages)
-        metrics_url = f"perplexity://{model}  \"{prompt}\""
+        metrics_url = f'perplexity://{model}  "{prompt}"'
 
         start_time = time.time()
 

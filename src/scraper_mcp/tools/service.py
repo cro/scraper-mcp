@@ -6,7 +6,7 @@ import asyncio
 from typing import Any
 
 from scraper_mcp.admin.service import DEFAULT_CONCURRENCY
-from scraper_mcp.core.providers import default_provider
+from scraper_mcp.core.providers import default_provider, get_provider
 from scraper_mcp.metrics import record_request
 from scraper_mcp.models.links import BatchLinksResponse, LinkResultItem, LinksResponse
 from scraper_mcp.models.scrape import (
@@ -24,7 +24,11 @@ from scraper_mcp.utils import (
 )
 
 
-def clean_metadata(metadata: dict[str, Any], css_selector: str | None = None, elements_matched: int | None = None) -> dict[str, Any]:
+def clean_metadata(
+    metadata: dict[str, Any],
+    css_selector: str | None = None,
+    elements_matched: int | None = None,
+) -> dict[str, Any]:
     """Clean metadata to only include meaningful optional fields.
 
     Args:
@@ -74,6 +78,10 @@ def clean_metadata(metadata: dict[str, Any], css_selector: str | None = None, el
     # Include headers if present (controlled by include_headers parameter)
     if "headers" in metadata:
         cleaned["headers"] = metadata["headers"]
+
+    # Include rendered_js if true (Playwright was used)
+    if metadata.get("rendered_js"):
+        cleaned["rendered_js"] = True
 
     return cleaned
 
@@ -145,7 +153,7 @@ async def scrape_single_url_safe(
             )
         except Exception as e:
             # Record failed request metrics
-            error_msg = f"{type(e).__name__}: {str(e)}"
+            error_msg = f"{type(e).__name__}: {e!s}"
             record_request(
                 url=url,
                 success=False,
@@ -168,6 +176,7 @@ async def batch_scrape_urls(
     concurrency: int = DEFAULT_CONCURRENCY,
     css_selector: str | None = None,
     include_headers: bool = False,
+    render_js: bool = False,
 ) -> BatchScrapeResponse:
     """Scrape multiple URLs concurrently.
 
@@ -178,16 +187,19 @@ async def batch_scrape_urls(
         concurrency: Maximum number of concurrent requests
         css_selector: Optional CSS selector to filter HTML elements
         include_headers: Include HTTP response headers in metadata
+        render_js: Use Playwright for JavaScript rendering (default: False)
 
     Returns:
         BatchScrapeResponse with results for all URLs
     """
     semaphore = asyncio.Semaphore(concurrency)
-    provider = default_provider
+    provider = get_provider(urls[0], render_js) if urls else default_provider
 
     # Create tasks for all URLs
     tasks = [
-        scrape_single_url_safe(url, provider, semaphore, timeout, max_retries, css_selector, include_headers)
+        scrape_single_url_safe(
+            url, provider, semaphore, timeout, max_retries, css_selector, include_headers
+        )
         for url in urls
     ]
 
@@ -283,7 +295,7 @@ async def scrape_single_url_markdown_safe(
             )
         except Exception as e:
             # Record failed request metrics
-            error_msg = f"{type(e).__name__}: {str(e)}"
+            error_msg = f"{type(e).__name__}: {e!s}"
             record_request(
                 url=url,
                 success=False,
@@ -307,6 +319,7 @@ async def batch_scrape_urls_markdown(
     concurrency: int = DEFAULT_CONCURRENCY,
     css_selector: str | None = None,
     include_headers: bool = False,
+    render_js: bool = False,
 ) -> BatchScrapeResponse:
     """Scrape multiple URLs concurrently and convert to markdown.
 
@@ -318,16 +331,24 @@ async def batch_scrape_urls_markdown(
         concurrency: Maximum number of concurrent requests
         css_selector: Optional CSS selector to filter HTML elements
         include_headers: Include HTTP response headers in metadata
+        render_js: Use Playwright for JavaScript rendering (default: False)
 
     Returns:
         BatchScrapeResponse with markdown results for all URLs
     """
     semaphore = asyncio.Semaphore(concurrency)
-    provider = default_provider
+    provider = get_provider(urls[0], render_js) if urls else default_provider
 
     tasks = [
         scrape_single_url_markdown_safe(
-            url, provider, semaphore, timeout, max_retries, strip_tags, css_selector, include_headers
+            url,
+            provider,
+            semaphore,
+            timeout,
+            max_retries,
+            strip_tags,
+            css_selector,
+            include_headers,
         )
         for url in urls
     ]
@@ -422,7 +443,7 @@ async def scrape_single_url_text_safe(
             )
         except Exception as e:
             # Record failed request metrics
-            error_msg = f"{type(e).__name__}: {str(e)}"
+            error_msg = f"{type(e).__name__}: {e!s}"
             record_request(
                 url=url,
                 success=False,
@@ -446,6 +467,7 @@ async def batch_scrape_urls_text(
     concurrency: int = DEFAULT_CONCURRENCY,
     css_selector: str | None = None,
     include_headers: bool = False,
+    render_js: bool = False,
 ) -> BatchScrapeResponse:
     """Scrape multiple URLs concurrently and extract text.
 
@@ -457,16 +479,24 @@ async def batch_scrape_urls_text(
         concurrency: Maximum number of concurrent requests
         css_selector: Optional CSS selector to filter HTML elements
         include_headers: Include HTTP response headers in metadata
+        render_js: Use Playwright for JavaScript rendering (default: False)
 
     Returns:
         BatchScrapeResponse with text results for all URLs
     """
     semaphore = asyncio.Semaphore(concurrency)
-    provider = default_provider
+    provider = get_provider(urls[0], render_js) if urls else default_provider
 
     tasks = [
         scrape_single_url_text_safe(
-            url, provider, semaphore, timeout, max_retries, strip_tags, css_selector, include_headers
+            url,
+            provider,
+            semaphore,
+            timeout,
+            max_retries,
+            strip_tags,
+            css_selector,
+            include_headers,
         )
         for url in urls
     ]
@@ -545,7 +575,7 @@ async def extract_links_single_safe(
             )
         except Exception as e:
             # Record failed request metrics
-            error_msg = f"{type(e).__name__}: {str(e)}"
+            error_msg = f"{type(e).__name__}: {e!s}"
             record_request(
                 url=url,
                 success=False,
@@ -568,6 +598,7 @@ async def batch_extract_links(
     concurrency: int = DEFAULT_CONCURRENCY,
     css_selector: str | None = None,
     include_headers: bool = False,
+    render_js: bool = False,
 ) -> BatchLinksResponse:
     """Extract links from multiple URLs concurrently.
 
@@ -578,15 +609,24 @@ async def batch_extract_links(
         concurrency: Maximum number of concurrent requests
         css_selector: Optional CSS selector to filter HTML before extracting links
         include_headers: Include HTTP response headers in metadata (not used for links)
+        render_js: Use Playwright for JavaScript rendering (default: False)
 
     Returns:
         BatchLinksResponse with link extraction results for all URLs
     """
     semaphore = asyncio.Semaphore(concurrency)
-    provider = default_provider
+    provider = get_provider(urls[0], render_js) if urls else default_provider
 
     tasks = [
-        extract_links_single_safe(url, provider, semaphore, timeout, max_retries, css_selector, include_headers)
+        extract_links_single_safe(
+            url,
+            provider,
+            semaphore,
+            timeout,
+            max_retries,
+            css_selector,
+            include_headers,
+        )
         for url in urls
     ]
 

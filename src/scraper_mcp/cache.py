@@ -6,10 +6,10 @@ from scraper_mcp.cache_manager import CacheManager, get_cache_manager
 
 __all__ = [
     "CacheManager",
+    "clear_all_cache",
+    "clear_expired_cache",
     "get_cache_manager",
     "get_cache_stats",
-    "clear_expired_cache",
-    "clear_all_cache",
 ]
 
 

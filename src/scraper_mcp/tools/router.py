@@ -25,6 +25,7 @@ async def scrape_url(
     strip_tags: list[str] | None = None,
     css_selector: str | None = None,
     include_headers: bool = False,
+    render_js: bool = False,
 ) -> BatchScrapeResponse:
     """Scrape one or more URLs and convert the content to markdown format.
 
@@ -36,12 +37,21 @@ async def scrape_url(
         css_selector: Optional CSS selector to filter HTML elements before conversion
                      (e.g., ".article-content", "article p")
         include_headers: Include HTTP response headers in metadata (default: False)
+        render_js: Enable JavaScript rendering using Playwright for SPAs and dynamic content
+                  (default: False). When enabled, uses headless Chromium to render the page.
 
     Returns:
         BatchScrapeResponse with markdown results for all URLs
     """
     return await batch_scrape_urls_markdown(
-        urls, timeout, max_retries, strip_tags, DEFAULT_CONCURRENCY, css_selector, include_headers
+        urls,
+        timeout,
+        max_retries,
+        strip_tags,
+        DEFAULT_CONCURRENCY,
+        css_selector,
+        include_headers,
+        render_js,
     )
 
 
@@ -51,6 +61,7 @@ async def scrape_url_html(
     max_retries: int = 3,
     css_selector: str | None = None,
     include_headers: bool = False,
+    render_js: bool = False,
 ) -> BatchScrapeResponse:
     """Scrape raw HTML content from one or more URLs.
 
@@ -61,12 +72,14 @@ async def scrape_url_html(
         css_selector: Optional CSS selector to filter HTML elements
                      (e.g., "meta", "img, video", ".article-content")
         include_headers: Include HTTP response headers in metadata (default: False)
+        render_js: Enable JavaScript rendering using Playwright for SPAs and dynamic content
+                  (default: False). When enabled, uses headless Chromium to render the page.
 
     Returns:
         BatchScrapeResponse with raw HTML results for all URLs
     """
     return await batch_scrape_urls(
-        urls, timeout, max_retries, DEFAULT_CONCURRENCY, css_selector, include_headers
+        urls, timeout, max_retries, DEFAULT_CONCURRENCY, css_selector, include_headers, render_js
     )
 
 
@@ -77,6 +90,7 @@ async def scrape_url_text(
     strip_tags: list[str] | None = None,
     css_selector: str | None = None,
     include_headers: bool = False,
+    render_js: bool = False,
 ) -> BatchScrapeResponse:
     """Scrape one or more URLs and extract plain text content.
 
@@ -88,12 +102,21 @@ async def scrape_url_text(
         css_selector: Optional CSS selector to filter HTML elements before text extraction
                      (e.g., "#main-content", "article.post")
         include_headers: Include HTTP response headers in metadata (default: False)
+        render_js: Enable JavaScript rendering using Playwright for SPAs and dynamic content
+                  (default: False). When enabled, uses headless Chromium to render the page.
 
     Returns:
         BatchScrapeResponse with text results for all URLs
     """
     return await batch_scrape_urls_text(
-        urls, timeout, max_retries, strip_tags, DEFAULT_CONCURRENCY, css_selector, include_headers
+        urls,
+        timeout,
+        max_retries,
+        strip_tags,
+        DEFAULT_CONCURRENCY,
+        css_selector,
+        include_headers,
+        render_js,
     )
 
 
@@ -103,6 +126,7 @@ async def scrape_extract_links(
     max_retries: int = 3,
     css_selector: str | None = None,
     include_headers: bool = False,
+    render_js: bool = False,
 ) -> BatchLinksResponse:
     """Scrape one or more URLs and extract all links.
 
@@ -112,12 +136,22 @@ async def scrape_extract_links(
         max_retries: Maximum number of retry attempts on failure (default: 3)
         css_selector: Optional CSS selector to scope link extraction to specific sections
                      (e.g., "nav", "article.main-content")
-        include_headers: Include HTTP response headers in metadata (default: False, not used for links)
+        include_headers: Include HTTP response headers in metadata (default: False)
+        render_js: Enable JavaScript rendering using Playwright for SPAs and dynamic content
+                  (default: False). When enabled, uses headless Chromium to render the page.
 
     Returns:
         BatchLinksResponse with link extraction results for all URLs
     """
-    return await batch_extract_links(urls, timeout, max_retries, DEFAULT_CONCURRENCY, css_selector, include_headers)
+    return await batch_extract_links(
+        urls,
+        timeout,
+        max_retries,
+        DEFAULT_CONCURRENCY,
+        css_selector,
+        include_headers,
+        render_js,
+    )
 
 
 async def cache_stats() -> dict[str, int | float]:

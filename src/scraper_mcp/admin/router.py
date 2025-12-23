@@ -43,13 +43,7 @@ async def api_cache_clear(request: Request) -> JSONResponse:
         result = clear_cache()
         return JSONResponse(result)
     except Exception as e:
-        return JSONResponse(
-            {
-                "status": "error",
-                "message": str(e)
-            },
-            status_code=500
-        )
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
 async def api_config_get(request: Request) -> JSONResponse:
@@ -74,13 +68,7 @@ async def api_config_update(request: Request) -> JSONResponse:
         result = update_config(config_updates)
         return JSONResponse(result)
     except Exception as e:
-        return JSONResponse(
-            {
-                "status": "error",
-                "message": str(e)
-            },
-            status_code=500
-        )
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
 async def api_request_details(request: Request) -> JSONResponse:
@@ -100,17 +88,13 @@ async def api_request_details(request: Request) -> JSONResponse:
 
     if not request_id:
         return JSONResponse(
-            {"status": "error", "message": "Request ID is required"},
-            status_code=400
+            {"status": "error", "message": "Request ID is required"}, status_code=400
         )
 
     # Find the request in metrics
     metrics = get_request_by_id(request_id)
     if not metrics:
-        return JSONResponse(
-            {"status": "error", "message": "Request not found"},
-            status_code=404
-        )
+        return JSONResponse({"status": "error", "message": "Request not found"}, status_code=404)
 
     # Build base response
     response = {

@@ -35,9 +35,9 @@ def register_server_resources(mcp: FastMCP) -> None:
             capabilities.append("perplexity")
         if os.getenv("ENABLE_CACHE_TOOLS", "").lower() == "true":
             capabilities.append("cache_tools")
-        if not os.getenv("DISABLE_RESOURCES", "").lower() == "true":
+        if os.getenv("DISABLE_RESOURCES", "").lower() != "true":
             capabilities.append("resources")
-        if not os.getenv("DISABLE_PROMPTS", "").lower() == "true":
+        if os.getenv("DISABLE_PROMPTS", "").lower() != "true":
             capabilities.append("prompts")
 
         info = {
@@ -93,37 +93,41 @@ def register_server_resources(mcp: FastMCP) -> None:
 
         # Add Perplexity tools if available
         if os.getenv("PERPLEXITY_API_KEY"):
-            tools.extend([
-                {
-                    "name": "perplexity",
-                    "description": "AI-powered web search with citations",
-                    "parameters": ["messages", "model", "temperature", "max_tokens"],
-                },
-                {
-                    "name": "perplexity_reason",
-                    "description": "Complex reasoning tasks with step-by-step analysis",
-                    "parameters": ["query", "temperature", "max_tokens"],
-                },
-            ])
+            tools.extend(
+                [
+                    {
+                        "name": "perplexity",
+                        "description": "AI-powered web search with citations",
+                        "parameters": ["messages", "model", "temperature", "max_tokens"],
+                    },
+                    {
+                        "name": "perplexity_reason",
+                        "description": "Complex reasoning tasks with step-by-step analysis",
+                        "parameters": ["query", "temperature", "max_tokens"],
+                    },
+                ]
+            )
 
         # Add cache tools if enabled
         if os.getenv("ENABLE_CACHE_TOOLS", "").lower() == "true":
-            tools.extend([
-                {
-                    "name": "cache_stats",
-                    "description": "Get cache statistics",
-                    "parameters": [],
-                },
-                {
-                    "name": "cache_clear_expired",
-                    "description": "Clear expired cache entries",
-                    "parameters": [],
-                },
-                {
-                    "name": "cache_clear_all",
-                    "description": "Clear all cache entries",
-                    "parameters": [],
-                },
-            ])
+            tools.extend(
+                [
+                    {
+                        "name": "cache_stats",
+                        "description": "Get cache statistics",
+                        "parameters": [],
+                    },
+                    {
+                        "name": "cache_clear_expired",
+                        "description": "Clear expired cache entries",
+                        "parameters": [],
+                    },
+                    {
+                        "name": "cache_clear_all",
+                        "description": "Clear all cache entries",
+                        "parameters": [],
+                    },
+                ]
+            )
 
         return json.dumps(tools, indent=2)

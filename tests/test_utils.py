@@ -271,9 +271,7 @@ class TestFilterHtmlBySelector:
         with pytest.raises(ValueError, match="Invalid CSS selector"):
             filter_html_by_selector(html_with_structured_content, "<<<invalid>>>")
 
-    def test_filter_preserves_element_structure(
-        self, html_with_structured_content: str
-    ) -> None:
+    def test_filter_preserves_element_structure(self, html_with_structured_content: str) -> None:
         """Test that filtered elements preserve their internal structure."""
         result, count = filter_html_by_selector(html_with_structured_content, "article")
 

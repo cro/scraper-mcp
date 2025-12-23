@@ -157,11 +157,13 @@ def run_server(
     # Register resources if enabled (CLI flag takes precedence over env var)
     if enable_resources and not DISABLE_RESOURCES_ENV:
         from scraper_mcp.resources import register_resources
+
         register_resources(mcp)
 
     # Register prompts if enabled (CLI flag takes precedence over env var)
     if enable_prompts and not DISABLE_PROMPTS_ENV:
         from scraper_mcp.prompts import register_prompts
+
         register_prompts(mcp)
 
     # Configure host and port via settings
