@@ -69,6 +69,8 @@ All tools support:
 
 ## Resources
 
+> **Note:** Resources are disabled by default to reduce context overhead. Enable with `--enable-resources` flag or `ENABLE_RESOURCES=true` environment variable.
+
 MCP resources provide read-only data access via URI-based addressing:
 
 | URI | Description |
@@ -82,6 +84,8 @@ MCP resources provide read-only data access via URI-based addressing:
 | `server://metrics` | Request counts, success rates |
 
 ## Prompts
+
+> **Note:** Prompts are disabled by default to reduce context overhead. Enable with `--enable-prompts` flag or `ENABLE_PROMPTS=true` environment variable.
 
 MCP prompts provide reusable workflow templates:
 
@@ -226,6 +230,10 @@ PERPLEXITY_API_KEY=your_key_here
 PLAYWRIGHT_MAX_CONTEXTS=5       # Max concurrent browser contexts
 PLAYWRIGHT_TIMEOUT=30000        # Page load timeout in ms
 PLAYWRIGHT_DISABLE_GPU=true     # Reduce memory in containers
+
+# MCP features (disabled by default to reduce context overhead)
+ENABLE_RESOURCES=true           # Enable MCP resources
+ENABLE_PROMPTS=true             # Enable MCP prompts
 
 # Proxy (optional)
 HTTP_PROXY=http://proxy.example.com:8080

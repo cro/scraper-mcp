@@ -28,10 +28,11 @@ from scraper_mcp.tools.router import (
 # Set ENABLE_CACHE_TOOLS=true to expose cache_stats, cache_clear_expired, and cache_clear_all
 ENABLE_CACHE_TOOLS = os.getenv("ENABLE_CACHE_TOOLS", "false").lower() in ("true", "1", "yes")
 
-# Configuration: Disable resources/prompts via environment variables
-# Set DISABLE_RESOURCES=true or DISABLE_PROMPTS=true to reduce context overhead
-DISABLE_RESOURCES_ENV = os.getenv("DISABLE_RESOURCES", "false").lower() in ("true", "1", "yes")
-DISABLE_PROMPTS_ENV = os.getenv("DISABLE_PROMPTS", "false").lower() in ("true", "1", "yes")
+# Configuration: Enable resources/prompts via environment variables
+# Resources and prompts are DISABLED by default to reduce context overhead
+# Set ENABLE_RESOURCES=true or ENABLE_PROMPTS=true to enable them
+ENABLE_RESOURCES_ENV = os.getenv("ENABLE_RESOURCES", "false").lower() in ("true", "1", "yes")
+ENABLE_PROMPTS_ENV = os.getenv("ENABLE_PROMPTS", "false").lower() in ("true", "1", "yes")
 
 
 # Default allowed hosts/origins for Docker environments
@@ -142,8 +143,8 @@ def run_server(
     transport: str = "streamable-http",
     host: str = "0.0.0.0",
     port: int = 8000,
-    enable_resources: bool = True,
-    enable_prompts: bool = True,
+    enable_resources: bool = False,
+    enable_prompts: bool = False,
 ) -> None:
     """Run the MCP server.
 
@@ -151,17 +152,17 @@ def run_server(
         transport: Transport type ('streamable-http' or 'sse')
         host: Host to bind to (default: 0.0.0.0)
         port: Port to bind to (default: 8000)
-        enable_resources: Enable MCP resources (default: True)
-        enable_prompts: Enable MCP prompts (default: True)
+        enable_resources: Enable MCP resources (default: False, disabled to reduce context)
+        enable_prompts: Enable MCP prompts (default: False, disabled to reduce context)
     """
-    # Register resources if enabled (CLI flag takes precedence over env var)
-    if enable_resources and not DISABLE_RESOURCES_ENV:
+    # Register resources if enabled via CLI flag OR environment variable
+    if enable_resources or ENABLE_RESOURCES_ENV:
         from scraper_mcp.resources import register_resources
 
         register_resources(mcp)
 
-    # Register prompts if enabled (CLI flag takes precedence over env var)
-    if enable_prompts and not DISABLE_PROMPTS_ENV:
+    # Register prompts if enabled via CLI flag OR environment variable
+    if enable_prompts or ENABLE_PROMPTS_ENV:
         from scraper_mcp.prompts import register_prompts
 
         register_prompts(mcp)

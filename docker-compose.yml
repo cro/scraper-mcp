@@ -16,7 +16,10 @@ services:
       - "8000:8000"
     env_file:
       - .env
-    environment: {}
+    # Optional: Enable MCP resources/prompts (disabled by default to reduce context overhead)
+    # environment:
+    #   ENABLE_RESOURCES: "true"
+    #   ENABLE_PROMPTS: "true"
     volumes:
       # Persistent cache volume (~1GB target)
       - cache_data:/app/cache

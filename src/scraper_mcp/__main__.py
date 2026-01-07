@@ -17,7 +17,8 @@ Examples:
   python -m scraper_mcp                           # Default: streamable-http on 0.0.0.0:8000
   python -m scraper_mcp sse                       # Use SSE transport
   python -m scraper_mcp streamable-http 0.0.0.0 9000  # Custom port
-  python -m scraper_mcp --disable-prompts         # Disable MCP prompts
+  python -m scraper_mcp --enable-prompts          # Enable MCP prompts
+  python -m scraper_mcp --enable-resources        # Enable MCP resources
         """,
     )
 
@@ -42,31 +43,28 @@ Examples:
         help="Port to bind to (default: 8000)",
     )
     parser.add_argument(
-        "--disable-resources",
+        "--enable-resources",
         action="store_true",
-        help="Disable MCP resources (reduces context overhead)",
+        help="Enable MCP resources (disabled by default to reduce context overhead)",
     )
     parser.add_argument(
-        "--disable-prompts",
+        "--enable-prompts",
         action="store_true",
-        help="Disable MCP prompts (reduces context overhead)",
+        help="Enable MCP prompts (disabled by default to reduce context overhead)",
     )
 
     args = parser.parse_args()
 
     print(f"Starting Scraper MCP server on {args.host}:{args.port} ({args.transport})...")
-
-    if args.disable_resources:
-        print("  - Resources: DISABLED")
-    if args.disable_prompts:
-        print("  - Prompts: DISABLED")
+    print(f"  - Resources: {'ENABLED' if args.enable_resources else 'disabled'}")
+    print(f"  - Prompts: {'ENABLED' if args.enable_prompts else 'disabled'}")
 
     run_server(
         transport=args.transport,
         host=args.host,
         port=args.port,
-        enable_resources=not args.disable_resources,
-        enable_prompts=not args.disable_prompts,
+        enable_resources=args.enable_resources,
+        enable_prompts=args.enable_prompts,
     )
 
 
