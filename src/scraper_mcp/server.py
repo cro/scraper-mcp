@@ -92,7 +92,7 @@ def _get_transport_security_settings() -> TransportSecuritySettings:
         allowed_origins = list(set(allowed_origins + custom_origins))
 
     return TransportSecuritySettings(
-        enable_dns_rebinding_protection=True,
+        enable_dns_rebinding_protection=False,
         allowed_hosts=allowed_hosts,
         allowed_origins=allowed_origins,
     )
